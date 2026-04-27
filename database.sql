@@ -26,3 +26,19 @@ CREATE TABLE IF NOT EXISTS activities (
     ora_end TIME NOT NULL,
     FOREIGN KEY (id_sala) REFERENCES rooms(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'user') DEFAULT 'user'
+);
+
+CREATE TABLE IF NOT EXISTS members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nume VARCHAR(255) NOT NULL,
+    tip_membru ENUM('junior', 'senior', 'amator', 'pro') NOT NULL,
+    nivel_joc VARCHAR(100),
+    id_antrenor_asociat INT DEFAULT NULL,
+    FOREIGN KEY (id_antrenor_asociat) REFERENCES coaches(id) ON DELETE SET NULL
+);

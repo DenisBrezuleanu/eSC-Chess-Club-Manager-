@@ -1,4 +1,5 @@
 <?php
+require_once 'auth_check.php';
 require_once 'config.php';
 
 $message = '';
@@ -15,9 +16,9 @@ if (isset($_GET['delete'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'] ?? null;
-    $nume = $_POST['nume'];
-    $capacitate = $_POST['capacitate'];
-    $dotari = $_POST['dotari'];
+    $nume = trim($_POST['nume'] ?? '');
+    $capacitate = (int)($_POST['capacitate'] ?? 0);
+    $dotari = trim($_POST['dotari'] ?? '');
 
     if ($id) {
         $stmt = $pdo->prepare("UPDATE rooms SET nume=?, capacitate=?, dotari=? WHERE id=?");
@@ -59,6 +60,8 @@ if (isset($_GET['edit'])) {
         <a href="coaches.php">Antrenori</a>
         <a href="rooms.php">Sali</a>
         <a href="activities.php">Activitati / Calendar</a>
+        <a href="members.php">Membri</a>
+        <a href="logout.php">Logout</a>
     </nav>
     
     <main>
@@ -69,16 +72,17 @@ if (isset($_GET['edit'])) {
         <?php endif; ?>
 
         <form action="rooms.php" method="POST">
-            <input type="hidden" name="id" value="<?= $editRoom['id'] ?? '' ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="id" value="<?= htmlspecialchars($editRoom['id'] ?? '') ?>">
             
             <label>Nume Sala:</label>
-            <input type="text" name="nume" value="<?= $editRoom['nume'] ?? '' ?>" required>
+            <input type="text" name="nume" value="<?= htmlspecialchars($editRoom['nume'] ?? '') ?>" required>
             
             <label>Capacitate:</label>
-            <input type="number" name="capacitate" value="<?= $editRoom['capacitate'] ?? '' ?>" required>
+            <input type="number" name="capacitate" value="<?= htmlspecialchars($editRoom['capacitate'] ?? '') ?>" required>
             
             <label>Dotari:</label>
-            <textarea name="dotari" required><?= $editRoom['dotari'] ?? '' ?></textarea>
+            <textarea name="dotari" required><?= htmlspecialchars($editRoom['dotari'] ?? '') ?></textarea>
             
             <button type="submit"><?= $editRoom ? 'Modifica' : 'Adauga' ?> Sala</button>
             <?php if ($editRoom): ?>

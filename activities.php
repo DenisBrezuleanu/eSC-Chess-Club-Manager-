@@ -1,4 +1,5 @@
 <?php
+require_once 'auth_check.php';
 require_once 'config.php';
 
 $message = '';
@@ -35,12 +36,12 @@ if (isset($_GET['delete'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = empty($_POST['id']) ? null : $_POST['id'];
-    $id_sala = $_POST['id_sala'];
-    $nume_activitate = $_POST['nume_activitate'];
-    $data = $_POST['data'];
-    $ora_start = $_POST['ora_start'];
-    $ora_end = $_POST['ora_end'];
+    $id = empty($_POST['id']) ? null : trim($_POST['id']);
+    $id_sala = trim($_POST['id_sala'] ?? '');
+    $nume_activitate = trim($_POST['nume_activitate'] ?? '');
+    $data = trim($_POST['data'] ?? '');
+    $ora_start = trim($_POST['ora_start'] ?? '');
+    $ora_end = trim($_POST['ora_end'] ?? '');
 
     if ($ora_end <= $ora_start) {
          $message = "Eroare: Ora de sfarsit trebuie sa fie dupa ora de inceput.";
@@ -94,6 +95,8 @@ if (isset($_GET['edit'])) {
         <a href="coaches.php">Antrenori</a>
         <a href="rooms.php">Sali</a>
         <a href="activities.php">Activitati / Calendar</a>
+        <a href="members.php">Membri</a>
+        <a href="logout.php">Logout</a>
     </nav>
     
     <main>
@@ -104,29 +107,30 @@ if (isset($_GET['edit'])) {
         <?php endif; ?>
 
         <form action="activities.php" method="POST">
-            <input type="hidden" name="id" value="<?= $editActivity['id'] ?? '' ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="id" value="<?= htmlspecialchars($editActivity['id'] ?? '') ?>">
             
             <label>Sala:</label>
             <select name="id_sala" required>
                 <option value="">Alege o sala...</option>
                 <?php foreach ($rooms as $room): ?>
-                    <option value="<?= $room['id'] ?>" <?= (isset($editActivity['id_sala']) && $editActivity['id_sala'] == $room['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($room['nume']) ?> (Capacitate: <?= $room['capacitate'] ?>)
+                    <option value="<?= htmlspecialchars($room['id']) ?>" <?= (isset($editActivity['id_sala']) && $editActivity['id_sala'] == $room['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($room['nume']) ?> (Capacitate: <?= htmlspecialchars($room['capacitate']) ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
 
             <label>Nume Activitate (ex: Antrenament, Curs):</label>
-            <input type="text" name="nume_activitate" value="<?= $editActivity['nume_activitate'] ?? '' ?>" required>
+            <input type="text" name="nume_activitate" value="<?= htmlspecialchars($editActivity['nume_activitate'] ?? '') ?>" required>
             
             <label>Data:</label>
-            <input type="date" name="data" value="<?= $editActivity['data'] ?? '' ?>" required>
+            <input type="date" name="data" value="<?= htmlspecialchars($editActivity['data'] ?? '') ?>" required>
             
             <label>Ora Start:</label>
-            <input type="time" name="ora_start" value="<?= $editActivity['ora_start'] ?? '' ?>" required>
+            <input type="time" name="ora_start" value="<?= htmlspecialchars($editActivity['ora_start'] ?? '') ?>" required>
 
             <label>Ora Sfarsit:</label>
-            <input type="time" name="ora_end" value="<?= $editActivity['ora_end'] ?? '' ?>" required>
+            <input type="time" name="ora_end" value="<?= htmlspecialchars($editActivity['ora_end'] ?? '') ?>" required>
             
             <button type="submit"><?= $editActivity ? 'Modifica' : 'Programeaza' ?> Activitatea</button>
             <?php if ($editActivity): ?>

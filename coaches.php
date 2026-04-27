@@ -1,4 +1,5 @@
 <?php
+require_once 'auth_check.php';
 require_once 'config.php';
 
 $message = '';
@@ -15,11 +16,11 @@ if (isset($_GET['delete'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'] ?? null;
-    $nume = $_POST['nume'];
-    $specializare = $_POST['specializare'];
-    $disponibilitate = $_POST['disponibilitate'];
-    $rol = $_POST['rol'];
-    $grupa = $_POST['grupa_asignata'];
+    $nume = trim($_POST['nume'] ?? '');
+    $specializare = trim($_POST['specializare'] ?? '');
+    $disponibilitate = trim($_POST['disponibilitate'] ?? '');
+    $rol = trim($_POST['rol'] ?? '');
+    $grupa = trim($_POST['grupa_asignata'] ?? '');
 
     if ($id) {
         $stmt = $pdo->prepare("UPDATE coaches SET nume=?, specializare=?, disponibilitate=?, rol=?, grupa_asignata=? WHERE id=?");
@@ -61,6 +62,8 @@ if (isset($_GET['edit'])) {
         <a href="coaches.php">Antrenori</a>
         <a href="rooms.php">Sali</a>
         <a href="activities.php">Activitati / Calendar</a>
+        <a href="members.php">Membri</a>
+        <a href="logout.php">Logout</a>
     </nav>
     
     <main>
@@ -71,22 +74,23 @@ if (isset($_GET['edit'])) {
         <?php endif; ?>
 
         <form action="coaches.php" method="POST">
-            <input type="hidden" name="id" value="<?= $editCoach['id'] ?? '' ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="id" value="<?= htmlspecialchars($editCoach['id'] ?? '') ?>">
             
             <label>Nume:</label>
-            <input type="text" name="nume" value="<?= $editCoach['nume'] ?? '' ?>" required>
+            <input type="text" name="nume" value="<?= htmlspecialchars($editCoach['nume'] ?? '') ?>" required>
             
             <label>Specializare:</label>
-            <input type="text" name="specializare" value="<?= $editCoach['specializare'] ?? '' ?>" required>
+            <input type="text" name="specializare" value="<?= htmlspecialchars($editCoach['specializare'] ?? '') ?>" required>
             
             <label>Disponibilitate:</label>
-            <input type="text" name="disponibilitate" value="<?= $editCoach['disponibilitate'] ?? '' ?>" required>
+            <input type="text" name="disponibilitate" value="<?= htmlspecialchars($editCoach['disponibilitate'] ?? '') ?>" required>
             
             <label>Rol:</label>
-            <input type="text" name="rol" value="<?= $editCoach['rol'] ?? '' ?>" required>
+            <input type="text" name="rol" value="<?= htmlspecialchars($editCoach['rol'] ?? '') ?>" required>
             
             <label>Grupa Asignata:</label>
-            <input type="text" name="grupa_asignata" value="<?= $editCoach['grupa_asignata'] ?? '' ?>" required>
+            <input type="text" name="grupa_asignata" value="<?= htmlspecialchars($editCoach['grupa_asignata'] ?? '') ?>" required>
             
             <button type="submit"><?= $editCoach ? 'Modifica' : 'Adauga' ?> Antrenor</button>
             <?php if ($editCoach): ?>
