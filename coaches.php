@@ -1,104 +1,117 @@
 <?php
-require_once 'auth_check.php';
-require_once 'config.php';
+require_once 'includes/auth_check.php';
+require_once 'includes/config.php';
+require_once 'includes/functions.php';
 
 $message = '';
 $messageType = '';
 
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $stmt = $pdo->prepare("DELETE FROM coaches WHERE id = ?");
-    if ($stmt->execute([$id])) {
-        $message = "Antrenorul a fost sters.";
-        $messageType = "alert-success";
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $_POST['id'] ?? null;
-    $nume = trim($_POST['nume'] ?? '');
-    $specializare = trim($_POST['specializare'] ?? '');
-    $disponibilitate = trim($_POST['disponibilitate'] ?? '');
-    $rol = trim($_POST['rol'] ?? '');
-    $grupa = trim($_POST['grupa_asignata'] ?? '');
+    $action = $_POST['action'] ?? '';
 
-    if ($id) {
-        $stmt = $pdo->prepare("UPDATE coaches SET nume=?, specializare=?, disponibilitate=?, rol=?, grupa_asignata=? WHERE id=?");
-        $stmt->execute([$nume, $specializare, $disponibilitate, $rol, $grupa, $id]);
-        $message = "Datele au fost modificate cu succes.";
-        $messageType = "alert-success";
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO coaches (nume, specializare, disponibilitate, rol, grupa_asignata) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$nume, $specializare, $disponibilitate, $rol, $grupa]);
-        $message = "Antrenorul a fost adaugat.";
-        $messageType = "alert-success";
+    if ($action === 'delete') {
+        $id = (int)($_POST['id'] ?? 0);
+        $stmt = $pdo->prepare("DELETE FROM coaches WHERE id = ?");
+
+        if ($stmt->execute([$id])) {
+            $message = 'Antrenorul a fost sters.';
+            $messageType = 'alert-success';
+        }
+    }
+
+    if ($action === 'save') {
+        $id = (int)($_POST['id'] ?? 0);
+        $nume = trim($_POST['nume'] ?? '');
+        $specializare = trim($_POST['specializare'] ?? '');
+        $disponibilitate = trim($_POST['disponibilitate'] ?? '');
+        $rol = trim($_POST['rol'] ?? '');
+        $grupa = trim($_POST['grupa_asignata'] ?? '');
+
+        if ($id > 0) {
+            $stmt = $pdo->prepare("
+                UPDATE coaches
+                SET nume = ?, specializare = ?, disponibilitate = ?, rol = ?, grupa_asignata = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$nume, $specializare, $disponibilitate, $rol, $grupa, $id]);
+            $message = 'Datele antrenorului au fost modificate.';
+        } else {
+            $stmt = $pdo->prepare("
+                INSERT INTO coaches (nume, specializare, disponibilitate, rol, grupa_asignata)
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$nume, $specializare, $disponibilitate, $rol, $grupa]);
+            $message = 'Antrenorul a fost adaugat.';
+        }
+
+        $messageType = 'alert-success';
     }
 }
 
-$coaches = $pdo->query("SELECT * FROM coaches")->fetchAll(PDO::FETCH_ASSOC);
+$coaches = $pdo->query("SELECT * FROM coaches ORDER BY id DESC")->fetchAll();
 
 $editCoach = null;
 if (isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM coaches WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
-    $editCoach = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->execute([(int)$_GET['edit']]);
+    $editCoach = $stmt->fetch();
 }
+
+$pageTitle = 'eSC - Gestiune antrenori';
+require 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eSC - Gestiune Antrenori</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>eSC - Chess Club Manager</h1>
-    </header>
-    
-    <nav>
-        <a href="index.php">Acasa</a>
-        <a href="coaches.php">Antrenori</a>
-        <a href="rooms.php">Sali</a>
-        <a href="activities.php">Activitati / Calendar</a>
-        <a href="members.php">Membri</a>
-        <a href="logout.php">Logout</a>
-    </nav>
-    
-    <main>
-        <h2>Gestiunea Antrenorilor si Colaboratorilor</h2>
+<section class="page-title">
+    <h2>Gestiunea antrenorilor si colaboratorilor</h2>
+    <p>Adauga, modifica si urmareste rolurile antrenorilor din club.</p>
+</section>
 
-        <?php if ($message): ?>
-            <div class="<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>
+<?php if ($message): ?>
+    <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
+<?php endif; ?>
+
+<section class="form-grid">
+    <form action="coaches.php" method="POST" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="id" value="<?= e($editCoach['id'] ?? '') ?>">
+
+        <h3><?= $editCoach ? 'Editeaza antrenor' : 'Adauga antrenor' ?></h3>
+
+        <div class="form-field">
+            <label for="coach-nume">Nume</label>
+            <input type="text" id="coach-nume" name="nume" value="<?= e($editCoach['nume'] ?? '') ?>" required>
+        </div>
+
+        <div class="form-field">
+            <label for="coach-specializare">Specializare</label>
+            <input type="text" id="coach-specializare" name="specializare" value="<?= e($editCoach['specializare'] ?? '') ?>" required>
+        </div>
+
+        <div class="form-field">
+            <label for="coach-disponibilitate">Disponibilitate</label>
+            <input type="text" id="coach-disponibilitate" name="disponibilitate" value="<?= e($editCoach['disponibilitate'] ?? '') ?>" required>
+        </div>
+
+        <div class="form-field">
+            <label for="coach-rol">Rol</label>
+            <input type="text" id="coach-rol" name="rol" value="<?= e($editCoach['rol'] ?? '') ?>" required>
+        </div>
+
+        <div class="form-field">
+            <label for="coach-grupa">Grupa asignata</label>
+            <input type="text" id="coach-grupa" name="grupa_asignata" value="<?= e($editCoach['grupa_asignata'] ?? '') ?>" required>
+        </div>
+
+        <button type="submit"><?= $editCoach ? 'Modifica' : 'Adauga' ?> antrenor</button>
+        <?php if ($editCoach): ?>
+            <a class="button secondary" href="coaches.php">Anuleaza editarea</a>
         <?php endif; ?>
+    </form>
+</section>
 
-        <form action="coaches.php" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-            <input type="hidden" name="id" value="<?= htmlspecialchars($editCoach['id'] ?? '') ?>">
-            
-            <label>Nume:</label>
-            <input type="text" name="nume" value="<?= htmlspecialchars($editCoach['nume'] ?? '') ?>" required>
-            
-            <label>Specializare:</label>
-            <input type="text" name="specializare" value="<?= htmlspecialchars($editCoach['specializare'] ?? '') ?>" required>
-            
-            <label>Disponibilitate:</label>
-            <input type="text" name="disponibilitate" value="<?= htmlspecialchars($editCoach['disponibilitate'] ?? '') ?>" required>
-            
-            <label>Rol:</label>
-            <input type="text" name="rol" value="<?= htmlspecialchars($editCoach['rol'] ?? '') ?>" required>
-            
-            <label>Grupa Asignata:</label>
-            <input type="text" name="grupa_asignata" value="<?= htmlspecialchars($editCoach['grupa_asignata'] ?? '') ?>" required>
-            
-            <button type="submit"><?= $editCoach ? 'Modifica' : 'Adauga' ?> Antrenor</button>
-            <?php if ($editCoach): ?>
-                <a href="coaches.php" style="text-align: center; display: block; margin-top: 10px;">Anuleaza editarea</a>
-            <?php endif; ?>
-        </form>
-
-        <h3>Lista Antrenorilor</h3>
+<section class="panel">
+    <h3>Lista antrenorilor</h3>
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
@@ -107,31 +120,39 @@ if (isset($_GET['edit'])) {
                     <th>Specializare</th>
                     <th>Disponibilitate</th>
                     <th>Rol</th>
-                    <th>Grupa Asignata</th>
+                    <th>Grupa asignata</th>
                     <th>Actiuni</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($coaches as $coach): ?>
-                <tr>
-                    <td><?= htmlspecialchars($coach['id']) ?></td>
-                    <td><?= htmlspecialchars($coach['nume']) ?></td>
-                    <td><?= htmlspecialchars($coach['specializare']) ?></td>
-                    <td><?= htmlspecialchars($coach['disponibilitate']) ?></td>
-                    <td><?= htmlspecialchars($coach['rol']) ?></td>
-                    <td><?= htmlspecialchars($coach['grupa_asignata']) ?></td>
-                    <td>
-                        <a href="coaches.php?edit=<?= $coach['id'] ?>">Modifica</a> |
-                        <a href="coaches.php?delete=<?= $coach['id'] ?>" onclick="return confirm('Sigur stergi acest antrenor?');">Sterge</a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td><?= e($coach['id']) ?></td>
+                        <td><?= e($coach['nume']) ?></td>
+                        <td><?= e($coach['specializare']) ?></td>
+                        <td><?= e($coach['disponibilitate']) ?></td>
+                        <td><?= e($coach['rol']) ?></td>
+                        <td><?= e($coach['grupa_asignata']) ?></td>
+                        <td>
+                            <div class="action-list">
+                                <a class="button compact secondary" href="coaches.php?edit=<?= e($coach['id']) ?>">Modifica</a>
+                                <form action="coaches.php" method="POST" class="inline-form">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e($coach['id']) ?>">
+                                    <button type="submit" class="compact danger">Sterge</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
+                <?php if (!$coaches): ?>
+                    <tr>
+                        <td colspan="7" class="centered">Nu exista antrenori inregistrati.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
-    </main>
-
-    <footer>
-        <p>&copy; 2026 eSC Chess Club Manager.</p>
-    </footer>
-</body>
-</html>
+    </div>
+</section>
+<?php require 'includes/footer.php'; ?>

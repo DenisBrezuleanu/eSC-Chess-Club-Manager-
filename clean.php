@@ -1,13 +1,22 @@
 <?php
-$files = ['database.sql', 'config.php', 'style.css', 'index.php', 'coaches.php', 'rooms.php', 'activities.php'];
-$diacs = ['ă'=>'a','â'=>'a','î'=>'i','ș'=>'s','ț'=>'t','Ă'=>'A','Â'=>'A','Î'=>'I','Ș'=>'S','Ț'=>'T'];
+require_once 'includes/auth_check.php';
+require_once 'includes/config.php';
+require_once 'includes/functions.php';
 
-foreach ($files as $file) {
-    if (file_exists($file)) {
-        $content = file_get_contents($file);
-        $content = preg_replace('/^\s*(--|\/\/).*$/m', '', $content);
-        $content = str_replace(array_keys($diacs), array_values($diacs), $content);
-        file_put_contents($file, $content);
-    }
-}
-echo "Gata!";
+$pageTitle = 'eSC - Mentenanta';
+require 'includes/header.php';
+?>
+<section class="page-title">
+    <h2>Mentenanta proiect</h2>
+    <p>Fisierul vechi de curatare automata a fost scos din fluxul activ pentru a evita modificari accidentale ale codului.</p>
+</section>
+
+<section class="panel">
+    <h3>Structura activa</h3>
+    <p>Layout-ul comun se afla in `includes/header.php` si `includes/footer.php`, iar stilurile active sunt in `assets/css/style.css`.</p>
+    <div class="action-list">
+        <a class="button secondary" href="index.php">Inapoi la panou</a>
+        <a class="button secondary" href="README.md">README</a>
+    </div>
+</section>
+<?php require 'includes/footer.php'; ?>

@@ -1,96 +1,98 @@
 <?php
-require_once 'auth_check.php';
-require_once 'config.php';
+require_once 'includes/auth_check.php';
+require_once 'includes/config.php';
+require_once 'includes/functions.php';
 
 $message = '';
 $messageType = '';
 
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $stmt = $pdo->prepare("DELETE FROM rooms WHERE id = ?");
-    if ($stmt->execute([$id])) {
-        $message = "Sala a fost stearsa.";
-        $messageType = "alert-success";
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $_POST['id'] ?? null;
-    $nume = trim($_POST['nume'] ?? '');
-    $capacitate = (int)($_POST['capacitate'] ?? 0);
-    $dotari = trim($_POST['dotari'] ?? '');
+    $action = $_POST['action'] ?? '';
 
-    if ($id) {
-        $stmt = $pdo->prepare("UPDATE rooms SET nume=?, capacitate=?, dotari=? WHERE id=?");
-        $stmt->execute([$nume, $capacitate, $dotari, $id]);
-        $message = "Sala a fost modificata.";
-        $messageType = "alert-success";
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO rooms (nume, capacitate, dotari) VALUES (?, ?, ?)");
-        $stmt->execute([$nume, $capacitate, $dotari]);
-        $message = "Sala a fost adaugata.";
-        $messageType = "alert-success";
+    if ($action === 'delete') {
+        $id = (int)($_POST['id'] ?? 0);
+        $stmt = $pdo->prepare("DELETE FROM rooms WHERE id = ?");
+
+        if ($stmt->execute([$id])) {
+            $message = 'Sala a fost stearsa.';
+            $messageType = 'alert-success';
+        }
+    }
+
+    if ($action === 'save') {
+        $id = (int)($_POST['id'] ?? 0);
+        $nume = trim($_POST['nume'] ?? '');
+        $capacitate = (int)($_POST['capacitate'] ?? 0);
+        $dotari = trim($_POST['dotari'] ?? '');
+
+        if ($id > 0) {
+            $stmt = $pdo->prepare("UPDATE rooms SET nume = ?, capacitate = ?, dotari = ? WHERE id = ?");
+            $stmt->execute([$nume, $capacitate, $dotari, $id]);
+            $message = 'Sala a fost modificata.';
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO rooms (nume, capacitate, dotari) VALUES (?, ?, ?)");
+            $stmt->execute([$nume, $capacitate, $dotari]);
+            $message = 'Sala a fost adaugata.';
+        }
+
+        $messageType = 'alert-success';
     }
 }
 
-$rooms = $pdo->query("SELECT * FROM rooms")->fetchAll(PDO::FETCH_ASSOC);
+$rooms = $pdo->query("SELECT * FROM rooms ORDER BY id DESC")->fetchAll();
 
 $editRoom = null;
 if (isset($_GET['edit'])) {
     $stmt = $pdo->prepare("SELECT * FROM rooms WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
-    $editRoom = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->execute([(int)$_GET['edit']]);
+    $editRoom = $stmt->fetch();
 }
+
+$pageTitle = 'eSC - Gestiune sali';
+require 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eSC - Gestiune Sali</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>eSC - Chess Club Manager</h1>
-    </header>
-    
-    <nav>
-        <a href="index.php">Acasa</a>
-        <a href="coaches.php">Antrenori</a>
-        <a href="rooms.php">Sali</a>
-        <a href="activities.php">Activitati / Calendar</a>
-        <a href="members.php">Membri</a>
-        <a href="logout.php">Logout</a>
-    </nav>
-    
-    <main>
-        <h2>Gestiunea Salilor</h2>
+<section class="page-title">
+    <h2>Gestiunea salilor</h2>
+    <p>Administreaza salile si dotarile folosite pentru activitati.</p>
+</section>
 
-        <?php if ($message): ?>
-            <div class="<?= $messageType ?>"><?= htmlspecialchars($message) ?></div>
+<?php if ($message): ?>
+    <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
+<?php endif; ?>
+
+<section class="form-grid">
+    <form action="rooms.php" method="POST" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="id" value="<?= e($editRoom['id'] ?? '') ?>">
+
+        <h3><?= $editRoom ? 'Editeaza sala' : 'Adauga sala' ?></h3>
+
+        <div class="form-field">
+            <label for="room-nume">Nume sala</label>
+            <input type="text" id="room-nume" name="nume" value="<?= e($editRoom['nume'] ?? '') ?>" required>
+        </div>
+
+        <div class="form-field">
+            <label for="room-capacitate">Capacitate</label>
+            <input type="number" id="room-capacitate" name="capacitate" min="1" value="<?= e($editRoom['capacitate'] ?? '') ?>" required>
+        </div>
+
+        <div class="form-field">
+            <label for="room-dotari">Dotari</label>
+            <textarea id="room-dotari" name="dotari" rows="4" required><?= e($editRoom['dotari'] ?? '') ?></textarea>
+        </div>
+
+        <button type="submit"><?= $editRoom ? 'Modifica' : 'Adauga' ?> sala</button>
+        <?php if ($editRoom): ?>
+            <a class="button secondary" href="rooms.php">Anuleaza editarea</a>
         <?php endif; ?>
+    </form>
+</section>
 
-        <form action="rooms.php" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-            <input type="hidden" name="id" value="<?= htmlspecialchars($editRoom['id'] ?? '') ?>">
-            
-            <label>Nume Sala:</label>
-            <input type="text" name="nume" value="<?= htmlspecialchars($editRoom['nume'] ?? '') ?>" required>
-            
-            <label>Capacitate:</label>
-            <input type="number" name="capacitate" value="<?= htmlspecialchars($editRoom['capacitate'] ?? '') ?>" required>
-            
-            <label>Dotari:</label>
-            <textarea name="dotari" required><?= htmlspecialchars($editRoom['dotari'] ?? '') ?></textarea>
-            
-            <button type="submit"><?= $editRoom ? 'Modifica' : 'Adauga' ?> Sala</button>
-            <?php if ($editRoom): ?>
-                <a href="rooms.php" style="text-align: center; display: block; margin-top: 10px;">Anuleaza</a>
-            <?php endif; ?>
-        </form>
-
-        <h3>Lista Salilor</h3>
+<section class="panel">
+    <h3>Lista salilor</h3>
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
@@ -103,23 +105,31 @@ if (isset($_GET['edit'])) {
             </thead>
             <tbody>
                 <?php foreach ($rooms as $room): ?>
-                <tr>
-                    <td><?= htmlspecialchars($room['id']) ?></td>
-                    <td><?= htmlspecialchars($room['nume']) ?></td>
-                    <td><?= htmlspecialchars($room['capacitate']) ?></td>
-                    <td><?= htmlspecialchars($room['dotari']) ?></td>
-                    <td>
-                        <a href="rooms.php?edit=<?= $room['id'] ?>">Modifica</a> |
-                        <a href="rooms.php?delete=<?= $room['id'] ?>" onclick="return confirm('Stergi sala?');">Sterge</a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td><?= e($room['id']) ?></td>
+                        <td><?= e($room['nume']) ?></td>
+                        <td><?= e($room['capacitate']) ?></td>
+                        <td><?= e($room['dotari']) ?></td>
+                        <td>
+                            <div class="action-list">
+                                <a class="button compact secondary" href="rooms.php?edit=<?= e($room['id']) ?>">Modifica</a>
+                                <form action="rooms.php" method="POST" class="inline-form">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= e($room['id']) ?>">
+                                    <button type="submit" class="compact danger">Sterge</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
+                <?php if (!$rooms): ?>
+                    <tr>
+                        <td colspan="5" class="centered">Nu exista sali inregistrate.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
-    </main>
-
-    <footer>
-        <p>&copy; 2026 eSC Chess Club Manager.</p>
-    </footer>
-</body>
-</html>
+    </div>
+</section>
+<?php require 'includes/footer.php'; ?>

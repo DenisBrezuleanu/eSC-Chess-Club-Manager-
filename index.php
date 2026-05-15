@@ -1,35 +1,74 @@
 <?php
-require_once 'auth_check.php';
-?>
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eSC - Chess Club Manager</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>eSC - Chess Club Manager</h1>
-    </header>
-    
-    <nav>
-        <a href="index.php">Acasa</a>
-        <a href="coaches.php">Antrenori</a>
-        <a href="rooms.php">Sali</a>
-        <a href="activities.php">Activitati / Calendar</a>
-        <a href="members.php">Membri</a>
-        <a href="logout.php">Logout (<?= htmlspecialchars($_SESSION['username']) ?>)</a>
-    </nav>
-    
-    <main>
-        <h2>Bine ai venit in aplicatia de gestiune a clubului de sah!</h2>
-        <p>Alege o optiune din meniu pentru a incepe.</p>
-    </main>
+require_once 'includes/auth_check.php';
+require_once 'includes/config.php';
+require_once 'includes/functions.php';
 
-    <footer>
-        <p>&copy; 2026 eSC Chess Club Manager. Toate drepturile rezervate.</p>
-    </footer>
-</body>
-</html>
+$pageTitle = 'eSC - Panou principal';
+
+$stats = [
+    'members' => (int)$pdo->query("SELECT COUNT(*) FROM members")->fetchColumn(),
+    'coaches' => (int)$pdo->query("SELECT COUNT(*) FROM coaches")->fetchColumn(),
+    'rooms' => (int)$pdo->query("SELECT COUNT(*) FROM rooms")->fetchColumn(),
+    'competitions' => (int)$pdo->query("SELECT COUNT(*) FROM competitions")->fetchColumn(),
+    'expenses' => (float)$pdo->query("SELECT COALESCE(SUM(total), 0) FROM travel_expenses")->fetchColumn(),
+];
+
+$today = date('Y-m-d');
+$stmt = $pdo->prepare("SELECT nume, locatie FROM competitions WHERE data = ? ORDER BY nume ASC");
+$stmt->execute([$today]);
+$todayCompetitions = $stmt->fetchAll();
+
+require 'includes/header.php';
+?>
+<section class="page-title">
+    <h2>Panou principal</h2>
+    <p>Alege modulul de lucru si urmareste rapid starea clubului.</p>
+</section>
+
+<section class="dashboard-grid" aria-label="Rezumat club">
+    <a class="metric-card" href="members.php">
+        <strong><?= e($stats['members']) ?></strong>
+        <span>Membri</span>
+    </a>
+    <a class="metric-card" href="coaches.php">
+        <strong><?= e($stats['coaches']) ?></strong>
+        <span>Antrenori</span>
+    </a>
+    <a class="metric-card" href="rooms.php">
+        <strong><?= e($stats['rooms']) ?></strong>
+        <span>Sali</span>
+    </a>
+    <a class="metric-card" href="competitions.php">
+        <strong><?= e($stats['competitions']) ?></strong>
+        <span>Competitii</span>
+    </a>
+</section>
+
+<section class="content-grid">
+    <div class="panel">
+        <h3>Competitii astazi</h3>
+        <?php if ($todayCompetitions): ?>
+            <ul class="clean-list">
+                <?php foreach ($todayCompetitions as $competition): ?>
+                    <li>
+                        <strong><?= e($competition['nume']) ?></strong>
+                        <span><?= e($competition['locatie']) ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="empty-state">Nu exista competitii programate pentru astazi.</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="panel">
+        <h3>Exporturi rapide</h3>
+        <p>Total deconturi inregistrate: <strong><?= e(format_money($stats['expenses'])) ?> lei</strong></p>
+        <div class="action-list">
+            <a class="button" href="export_data_json.php">Export JSON</a>
+            <a class="button secondary" href="export_data_xml.php">Export XML</a>
+            <a class="button secondary" href="travel_report.php">Raport deconturi</a>
+        </div>
+    </div>
+</section>
+<?php require 'includes/footer.php'; ?>

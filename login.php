@@ -1,25 +1,20 @@
 <?php
-session_start();
-require_once 'config.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
+require_once 'includes/config.php';
+require_once 'includes/functions.php';
 
-$pdo->exec("CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'user') DEFAULT 'user'
-)");
-
-// cont admin 
 $stmt = $pdo->query("SELECT COUNT(*) FROM users");
-if ($stmt->fetchColumn() == 0) {
+if ((int)$stmt->fetchColumn() === 0) {
     $hash = password_hash('admin123', PASSWORD_DEFAULT);
-    $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES ('admin', ?, 'admin')")->execute([$hash]);
+    $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)")
+        ->execute(['admin', $hash, 'admin']);
 }
 
 if (isset($_SESSION['user_id'])) {
-    header("Location: index.php");
-    exit();
+    redirect_to('index.php');
 }
 
 if (empty($_SESSION['csrf_token'])) {
@@ -27,11 +22,14 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 $error = '';
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = $_POST['csrf_token'] ?? '';
+
+    if (!hash_equals($_SESSION['csrf_token'], $token)) {
         die("Eroare de securitate. Token CSRF invalid.");
     }
-    
+
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -43,38 +41,50 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
-        //regeneram tokenul dup aut 
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        header("Location: index.php");
-        exit();
-    } else {
-        $error = "Nume de utilizator sau parolă incorecte.";
+
+        redirect_to('index.php');
     }
+
+    $error = 'Nume de utilizator sau parola incorecte.';
 }
 ?>
 <!DOCTYPE html>
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - eSC</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
-    <header>
-        <h1>eSC - Autentificare</h1>
+<body class="login-page">
+    <header class="site-header login-header">
+        <div>
+            <h1>eSC - Autentificare</h1>
+            <p>Acces administrare club de sah</p>
+        </div>
     </header>
-    <main>
-        <?php if (!empty($error)): ?>
-            <div class="alert-error"><?= htmlspecialchars($error) ?></div>
+
+    <main class="page-shell login-shell">
+        <?php if ($error): ?>
+            <div class="alert-error"><?= e($error) ?></div>
         <?php endif; ?>
-        <form method="POST" action="login.php">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            <label>Utilizator:</label>
-            <input type="text" name="username" required>
-            <label>Parolă:</label>
-            <input type="password" name="password" required>
+
+        <form method="POST" action="login.php" class="form-card">
+            <?= csrf_field() ?>
+
+            <div class="form-field">
+                <label for="username">Utilizator</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+
+            <div class="form-field">
+                <label for="password">Parola</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+
             <button type="submit">Autentificare</button>
-            <p style="text-align: center; font-size: 0.9em; margin-top: 10px;">Cont default: admin / admin123</p>
+            <p class="form-note">Cont default: admin / admin123</p>
         </form>
     </main>
 </body>
