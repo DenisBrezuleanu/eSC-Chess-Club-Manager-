@@ -6,10 +6,22 @@ require_once 'includes/competition_helpers.php';
 
 $message = '';
 $messageType = '';
+$canManageCompetitions = can_manage_admin_data();
+$canManageResults = can_manage_competition_results();
 $selectedCompetitionId = (int)($_GET['competition_id'] ?? ($_POST['id_competitie'] ?? 0));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    $adminCompetitionActions = ['save_competition', 'import_competitions_csv', 'delete_competition', 'save_award', 'import_awards_csv', 'import_member_awards_csv'];
+    $resultActions = ['add_participant', 'import_participants_csv', 'assign_award'];
+
+    if (in_array($action, $adminCompetitionActions, true) && !$canManageCompetitions) {
+        $message = 'Nu ai permisiunea necesara pentru a modifica structura competitiilor sau premiilor.';
+        $messageType = 'alert-error';
+    } elseif (in_array($action, $resultActions, true) && !$canManageResults) {
+        $message = 'Nu ai permisiunea necesara pentru a modifica rezultatele competitiilor.';
+        $messageType = 'alert-error';
+    } else {
 
     if ($action === 'save_competition') {
         $id = (int)($_POST['id'] ?? 0);
@@ -31,6 +43,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $messageType = 'alert-success';
+    }
+
+    if ($action === 'import_competitions_csv') {
+        $stmt = $pdo->prepare("INSERT INTO competitions (id, nume, data, locatie, tip) VALUES (?, ?, ?, ?, ?)");
+        $existsStmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM competitions
+            WHERE id = ? OR (LOWER(nume) = LOWER(?) AND data = ? AND LOWER(locatie) = LOWER(?))
+        ");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $existsStmt): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $name = trim($row['nume'] ?? '');
+            $date = trim($row['data'] ?? ($row['data_start'] ?? ''));
+            $location = trim($row['locatie'] ?? '');
+            $type = trim($row['tip'] ?? '');
+
+            if ($id === null || $id <= 0 || $name === '' || $date === '' || $location === '' || $type === '') {
+                return 'invalid';
+            }
+
+            $existsStmt->execute([$id, $name, $date, $location]);
+
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$id, $name, $date, $location, $type]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('competitii', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
 
     if ($action === 'delete_competition') {
@@ -61,6 +107,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = 'alert-success';
     }
 
+    if ($action === 'import_participants_csv') {
+        $stmt = $pdo->prepare("
+            INSERT INTO competition_participants (id_competitie, id_membru, punctaj_obtinut)
+            VALUES (?, ?, ?)
+        ");
+        $existsStmt = $pdo->prepare("SELECT COUNT(*) FROM competition_participants WHERE id_competitie = ? AND id_membru = ?");
+        $competitionExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM competitions WHERE id = ?");
+        $memberExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM members WHERE id = ?");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $existsStmt, $competitionExistsStmt, $memberExistsStmt): string {
+            $competitionId = isset($row['id_competitie']) && is_numeric($row['id_competitie']) ? (int)$row['id_competitie'] : 0;
+            $memberId = isset($row['id_membru']) && is_numeric($row['id_membru']) ? (int)$row['id_membru'] : 0;
+            $scoreValue = $row['punctaj_obtinut'] ?? ($row['punctaj'] ?? null);
+            $score = is_numeric($scoreValue) ? (float)$scoreValue : null;
+
+            if ($competitionId <= 0 || $memberId <= 0 || $score === null) {
+                return 'invalid';
+            }
+
+            $competitionExistsStmt->execute([$competitionId]);
+            $memberExistsStmt->execute([$memberId]);
+
+            if ((int)$competitionExistsStmt->fetchColumn() === 0 || (int)$memberExistsStmt->fetchColumn() === 0) {
+                return 'missing_reference';
+            }
+
+            $existsStmt->execute([$competitionId, $memberId]);
+
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$competitionId, $memberId, $score]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('participanti', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
+    }
+
     if ($action === 'save_award') {
         $name = trim($_POST['award_nume'] ?? '');
         $description = trim($_POST['descriere'] ?? '');
@@ -71,6 +158,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'Premiul a fost creat.';
             $messageType = 'alert-success';
         }
+    }
+
+    if ($action === 'import_awards_csv') {
+        $stmt = $pdo->prepare("INSERT INTO awards (id, nume, descriere) VALUES (?, ?, ?)");
+        $existsStmt = $pdo->prepare("SELECT COUNT(*) FROM awards WHERE id = ? OR LOWER(nume) = LOWER(?)");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $existsStmt): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $name = trim($row['nume'] ?? '');
+            $description = trim($row['descriere'] ?? '');
+
+            if ($id === null || $id <= 0 || $name === '') {
+                return 'invalid';
+            }
+
+            $existsStmt->execute([$id, $name]);
+
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$id, $name, $description]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('premii', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
 
     if ($action === 'assign_award') {
@@ -91,6 +206,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $message = 'Premiul a fost acordat membrului.';
         $messageType = 'alert-success';
+    }
+
+    if ($action === 'import_member_awards_csv') {
+        $stmt = $pdo->prepare("
+            INSERT INTO member_awards (id, id_award, id_membru, id_competitie, data_acordare)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $existsStmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM member_awards
+            WHERE id = ?
+               OR (id_award = ? AND id_membru = ? AND ((id_competitie = ?) OR (id_competitie IS NULL AND ? IS NULL)) AND data_acordare = ?)
+        ");
+        $awardExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM awards WHERE id = ?");
+        $memberExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM members WHERE id = ?");
+        $competitionExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM competitions WHERE id = ?");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $existsStmt, $awardExistsStmt, $memberExistsStmt, $competitionExistsStmt): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $awardId = isset($row['id_award']) && is_numeric($row['id_award']) ? (int)$row['id_award'] : 0;
+            $memberId = isset($row['id_membru']) && is_numeric($row['id_membru']) ? (int)$row['id_membru'] : 0;
+            $competitionId = isset($row['id_competitie']) && is_numeric($row['id_competitie']) ? (int)$row['id_competitie'] : null;
+            $date = trim($row['data_acordare'] ?? '');
+
+            if ($id === null || $id <= 0 || $awardId <= 0 || $memberId <= 0 || $date === '') {
+                return 'invalid';
+            }
+
+            if ($competitionId === 0) {
+                $competitionId = null;
+            }
+
+            $awardExistsStmt->execute([$awardId]);
+            $memberExistsStmt->execute([$memberId]);
+
+            if ((int)$awardExistsStmt->fetchColumn() === 0 || (int)$memberExistsStmt->fetchColumn() === 0) {
+                return 'missing_reference';
+            }
+
+            if ($competitionId !== null) {
+                $competitionExistsStmt->execute([$competitionId]);
+
+                if ((int)$competitionExistsStmt->fetchColumn() === 0) {
+                    return 'missing_reference';
+                }
+            }
+
+            $existsStmt->execute([$id, $awardId, $memberId, $competitionId, $competitionId, $date]);
+
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$id, $awardId, $memberId, $competitionId, $date]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('premii acordate', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
+    }
     }
 }
 
@@ -140,8 +316,15 @@ require 'includes/header.php';
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
+<?php if (!$canManageResults && !$canManageCompetitions): ?>
+    <div class="alert-success"><?= e(role_read_only_notice('competitii si clasamente')) ?></div>
+<?php elseif (!$canManageCompetitions): ?>
+    <div class="alert-success">Esti autentificat ca <?= e(current_user_role_label()) ?>. Poti gestiona participanti, punctaje si premii acordate, dar competitiile si premiile se creeaza de catre admin.</div>
+<?php endif; ?>
 
+<?php if ($canManageCompetitions || $canManageResults): ?>
 <section class="form-grid">
+    <?php if ($canManageCompetitions): ?>
     <form action="competitions.php" method="POST" class="form-card">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="save_competition">
@@ -167,6 +350,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="competition-tip">Tip</label>
             <select id="competition-tip" name="tip" required>
+                <option value="">Alege tipul competitiei</option>
                 <?php foreach (['Clasic', 'Rapid', 'Blitz', 'Intern', 'Extern'] as $type): ?>
                     <option value="<?= e($type) ?>"<?= selected_attr($editCompetition['tip'] ?? 'Clasic', $type) ?>>
                         <?= e($type) ?>
@@ -180,7 +364,9 @@ require 'includes/header.php';
             <a class="button secondary" href="competitions.php?competition_id=<?= e($editCompetition['id']) ?>">Anuleaza editarea</a>
         <?php endif; ?>
     </form>
+    <?php endif; ?>
 
+    <?php if ($canManageResults): ?>
     <form action="competitions.php" method="POST" class="form-card">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="add_participant">
@@ -190,6 +376,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="participant-competition">Competitie</label>
             <select id="participant-competition" name="id_competitie" required>
+                <option value="">Alege competitia</option>
                 <?php foreach ($competitions as $competition): ?>
                     <option value="<?= e($competition['id']) ?>"<?= selected_attr($selectedCompetitionId, $competition['id']) ?>>
                         <?= e($competition['nume']) ?> - <?= e($competition['data']) ?>
@@ -201,6 +388,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="participant-member">Membru</label>
             <select id="participant-member" name="id_membru" required>
+                <option value="">Alege membrul</option>
                 <?php foreach ($members as $member): ?>
                     <option value="<?= e($member['id']) ?>"><?= e($member['nume']) ?></option>
                 <?php endforeach; ?>
@@ -212,12 +400,48 @@ require 'includes/header.php';
             <input type="number" id="participant-score" name="punctaj_obtinut" min="0" step="0.01" required>
         </div>
 
-        <button type="submit"<?= (!$competitions || !$members) ? ' ' : '' ?>>Adauga participant</button>
+        <button type="submit"<?= (!$competitions || !$members) ? ' disabled' : '' ?>>Adauga participant</button>
         <?php if (!$competitions || !$members): ?>
             <p class="form-note">Ai nevoie de cel putin o competitie si un membru.</p>
         <?php endif; ?>
     </form>
+    <?php endif; ?>
+
+    <?php if ($canManageCompetitions): ?>
+    <form action="competitions.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_competitions_csv">
+
+        <h3>Import competitii CSV</h3>
+        <p class="form-note">Format: id, nume, data_start, data_end, locatie, tip</p>
+
+        <div class="form-field">
+            <label for="competitions-csv-file">Fisier CSV</label>
+            <input type="file" id="competitions-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa competitii</button>
+    </form>
+    <?php endif; ?>
+
+    <?php if ($canManageResults): ?>
+    <form action="competitions.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_participants_csv">
+
+        <h3>Import participanti CSV</h3>
+        <p class="form-note">Format: id_competitie, id_membru, punctaj</p>
+
+        <div class="form-field">
+            <label for="participants-csv-file">Fisier CSV</label>
+            <input type="file" id="participants-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa participanti</button>
+    </form>
+    <?php endif; ?>
 </section>
+<?php endif; ?>
 
 <section class="content-grid">
     <div class="panel">
@@ -244,14 +468,16 @@ require 'includes/header.php';
                                 <div class="action-list">
                                     <a class="button compact secondary" href="competitions.php?competition_id=<?= e($competition['id']) ?>">Clasament</a>
                                     <a class="button compact secondary" href="leaderboard.php?competition_id=<?= e($competition['id']) ?>">Pagina clasament</a>
-                                    <a class="button compact secondary" href="competitions.php?edit=<?= e($competition['id']) ?>&competition_id=<?= e($competition['id']) ?>">Modifica</a>
-                                    <form action="competitions.php" method="POST" class="inline-form">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="action" value="delete_competition">
-                                        <input type="hidden" name="id" value="<?= e($competition['id']) ?>">
-                                        <input type="hidden" name="id_competitie" value="<?= e($competition['id']) ?>">
-                                        <button type="submit" class="compact danger">Sterge</button>
-                                    </form>
+                                    <?php if ($canManageCompetitions): ?>
+                                        <a class="button compact secondary" href="competitions.php?edit=<?= e($competition['id']) ?>&competition_id=<?= e($competition['id']) ?>">Modifica</a>
+                                        <form action="competitions.php" method="POST" class="inline-form">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="delete_competition">
+                                            <input type="hidden" name="id" value="<?= e($competition['id']) ?>">
+                                            <input type="hidden" name="id_competitie" value="<?= e($competition['id']) ?>">
+                                            <button type="submit" class="compact danger">Sterge</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -272,7 +498,9 @@ require 'includes/header.php';
     </div>
 </section>
 
+<?php if ($canManageCompetitions || $canManageResults): ?>
 <section class="form-grid">
+    <?php if ($canManageCompetitions): ?>
     <form action="competitions.php" method="POST" class="form-card">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="save_award">
@@ -291,7 +519,9 @@ require 'includes/header.php';
 
         <button type="submit">Salveaza premiu</button>
     </form>
+    <?php endif; ?>
 
+    <?php if ($canManageResults): ?>
     <form action="competitions.php" method="POST" class="form-card">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="assign_award">
@@ -301,6 +531,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="assign-award">Premiu</label>
             <select id="assign-award" name="id_award" required>
+                <option value="">Alege premiul</option>
                 <?php foreach ($awards as $award): ?>
                     <option value="<?= e($award['id']) ?>"><?= e($award['nume']) ?></option>
                 <?php endforeach; ?>
@@ -310,6 +541,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="assign-member">Membru</label>
             <select id="assign-member" name="id_membru" required>
+                <option value="">Alege membrul</option>
                 <?php foreach ($members as $member): ?>
                     <option value="<?= e($member['id']) ?>"><?= e($member['nume']) ?></option>
                 <?php endforeach; ?>
@@ -338,7 +570,43 @@ require 'includes/header.php';
             <p class="form-note">Ai nevoie de cel putin un premiu si un membru.</p>
         <?php endif; ?>
     </form>
+    <?php endif; ?>
+
+    <?php if ($canManageCompetitions): ?>
+    <form action="competitions.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_awards_csv">
+
+        <h3>Import premii CSV</h3>
+        <p class="form-note">Format: id, nume, descriere</p>
+
+        <div class="form-field">
+            <label for="awards-csv-file">Fisier CSV</label>
+            <input type="file" id="awards-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa premii</button>
+    </form>
+    <?php endif; ?>
+
+    <?php if ($canManageCompetitions): ?>
+    <form action="competitions.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_member_awards_csv">
+
+        <h3>Import premii acordate CSV</h3>
+        <p class="form-note">Format: id, id_award, id_membru, id_competitie, data_acordare</p>
+
+        <div class="form-field">
+            <label for="member-awards-csv-file">Fisier CSV</label>
+            <input type="file" id="member-awards-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa premii acordate</button>
+    </form>
+    <?php endif; ?>
 </section>
+<?php endif; ?>
 
 <section class="panel">
     <h3>Premii acordate recent</h3>

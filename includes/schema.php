@@ -20,6 +20,43 @@ function ensure_column(PDO $pdo, string $table, string $column, string $definiti
     }
 }
 
+function unique_index_exists(PDO $pdo, string $table, array $columns): bool
+{
+    $stmt = $pdo->query("SHOW INDEX FROM " . quote_identifier($table));
+    $indexes = [];
+
+    foreach ($stmt->fetchAll() as $index) {
+        if ((int)$index['Non_unique'] !== 0) {
+            continue;
+        }
+
+        $indexes[$index['Key_name']][(int)$index['Seq_in_index']] = $index['Column_name'];
+    }
+
+    foreach ($indexes as $indexColumns) {
+        ksort($indexColumns);
+
+        if (array_values($indexColumns) === $columns) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function ensure_unique_index(PDO $pdo, string $table, string $indexName, array $columns): void
+{
+    if (unique_index_exists($pdo, $table, $columns)) {
+        return;
+    }
+
+    $columnSql = implode(', ', array_map('quote_identifier', $columns));
+    $pdo->exec(
+        "ALTER TABLE " . quote_identifier($table) .
+        " ADD UNIQUE KEY " . quote_identifier($indexName) . " (" . $columnSql . ")"
+    );
+}
+
 function ensure_schema(PDO $pdo): void
 {
     $pdo->exec("
@@ -61,9 +98,16 @@ function ensure_schema(PDO $pdo): void
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(100) NOT NULL UNIQUE,
             password_hash VARCHAR(255) NOT NULL,
-            role ENUM('admin', 'user') DEFAULT 'user'
+            role VARCHAR(30) NOT NULL DEFAULT 'member',
+            id_membru INT DEFAULT NULL,
+            id_antrenor INT DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+    ensure_column($pdo, 'users', 'role', "role VARCHAR(30) NOT NULL DEFAULT 'member'");
+    ensure_column($pdo, 'users', 'id_membru', 'id_membru INT NULL');
+    ensure_column($pdo, 'users', 'id_antrenor', 'id_antrenor INT NULL');
+    $pdo->exec("ALTER TABLE users MODIFY role VARCHAR(30) NOT NULL DEFAULT 'member'");
+    $pdo->exec("UPDATE users SET role = 'member' WHERE role = 'user'");
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS members (
@@ -95,10 +139,11 @@ function ensure_schema(PDO $pdo): void
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS competition_participants (
+            id INT AUTO_INCREMENT PRIMARY KEY,
             id_competitie INT NOT NULL,
             id_membru INT NOT NULL,
             punctaj_obtinut DECIMAL(8,2) NOT NULL DEFAULT 0,
-            PRIMARY KEY (id_competitie, id_membru),
+            UNIQUE KEY uniq_competition_member (id_competitie, id_membru),
             INDEX idx_participants_member (id_membru),
             CONSTRAINT fk_participants_competition
                 FOREIGN KEY (id_competitie) REFERENCES competitions(id) ON DELETE CASCADE,
@@ -109,6 +154,19 @@ function ensure_schema(PDO $pdo): void
     ensure_column($pdo, 'competition_participants', 'id_competitie', 'id_competitie INT NULL');
     ensure_column($pdo, 'competition_participants', 'id_membru', 'id_membru INT NULL');
     ensure_column($pdo, 'competition_participants', 'punctaj_obtinut', 'punctaj_obtinut DECIMAL(8,2) NOT NULL DEFAULT 0');
+
+    if (column_exists($pdo, 'competition_participants', 'id')) {
+        $pdo->exec("
+            DELETE duplicate_participants
+            FROM competition_participants duplicate_participants
+            INNER JOIN competition_participants kept_participants
+                ON kept_participants.id_competitie = duplicate_participants.id_competitie
+               AND kept_participants.id_membru = duplicate_participants.id_membru
+               AND kept_participants.id < duplicate_participants.id
+        ");
+    }
+
+    ensure_unique_index($pdo, 'competition_participants', 'uniq_competition_member', ['id_competitie', 'id_membru']);
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS awards (
@@ -162,4 +220,12 @@ function ensure_schema(PDO $pdo): void
     ensure_column($pdo, 'travel_expenses', 'cost_cazare', 'cost_cazare DECIMAL(10,2) NOT NULL DEFAULT 0');
     ensure_column($pdo, 'travel_expenses', 'cost_masa', 'cost_masa DECIMAL(10,2) NOT NULL DEFAULT 0');
     ensure_column($pdo, 'travel_expenses', 'total', 'total DECIMAL(10,2) NOT NULL DEFAULT 0');
+
+    if (column_exists($pdo, 'travel_expenses', 'id_travel')) {
+        $pdo->exec("ALTER TABLE travel_expenses MODIFY id_travel INT NULL");
+    }
+
+    if (column_exists($pdo, 'travel_expenses', 'nume_participant')) {
+        $pdo->exec("ALTER TABLE travel_expenses MODIFY nume_participant VARCHAR(255) NULL");
+    }
 }

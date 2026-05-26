@@ -5,6 +5,7 @@ require_once 'includes/functions.php';
 
 $message = '';
 $messageType = '';
+$canManageActivitySchedule = can_manage_activities();
 
 function has_activity_conflict(PDO $pdo, int $roomId, string $date, string $start, string $end, int $excludeId = 0): bool
 {
@@ -34,6 +35,11 @@ function has_activity_conflict(PDO $pdo, int $roomId, string $date, string $star
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    if (!$canManageActivitySchedule) {
+        $message = 'Nu ai permisiunea necesara pentru a modifica activitatile.';
+        $messageType = 'alert-error';
+    } else {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
@@ -80,6 +86,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'alert-success';
         }
     }
+
+    if ($action === 'import_csv') {
+        $stmt = $pdo->prepare("
+            INSERT INTO activities (id, id_sala, nume_activitate, data, ora_start, ora_end)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $existsStmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM activities
+            WHERE id = ?
+               OR (id_sala = ? AND LOWER(nume_activitate) = LOWER(?) AND data = ? AND ora_start = ? AND ora_end = ?)
+        ");
+        $roomExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM rooms WHERE id = ?");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($pdo, $stmt, $existsStmt, $roomExistsStmt): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $roomId = isset($row['id_sala']) && is_numeric($row['id_sala']) ? (int)$row['id_sala'] : 0;
+            $activityName = trim($row['nume_activitate'] ?? '');
+            $date = trim($row['data'] ?? '');
+            $start = trim($row['ora_start'] ?? '');
+            $end = trim($row['ora_end'] ?? '');
+
+            if ($id === null || $id <= 0 || $roomId <= 0 || $activityName === '' || $date === '' || $start === '' || $end === '' || $end <= $start) {
+                return 'invalid';
+            }
+
+            $roomExistsStmt->execute([$roomId]);
+
+            if ((int)$roomExistsStmt->fetchColumn() === 0) {
+                return 'missing_reference';
+            }
+
+            $existsStmt->execute([$id, $roomId, $activityName, $date, $start, $end]);
+
+            if ((int)$existsStmt->fetchColumn() > 0 || has_activity_conflict($pdo, $roomId, $date, $start, $end)) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$id, $roomId, $activityName, $date, $start, $end]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('activitati', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
+    }
+    }
 }
 
 $rooms = $pdo->query("SELECT * FROM rooms ORDER BY nume ASC")->fetchAll();
@@ -108,7 +161,11 @@ require 'includes/header.php';
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
+<?php if (!$canManageActivitySchedule): ?>
+    <div class="alert-success"><?= e(role_read_only_notice('programul activitatilor')) ?></div>
+<?php endif; ?>
 
+<?php if ($canManageActivitySchedule): ?>
 <section class="form-grid">
     <form action="activities.php" method="POST" class="form-card">
         <?= csrf_field() ?>
@@ -155,7 +212,23 @@ require 'includes/header.php';
             <a class="button secondary" href="activities.php">Anuleaza editarea</a>
         <?php endif; ?>
     </form>
+
+    <form action="activities.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_csv">
+
+        <h3>Import activitati CSV</h3>
+        <p class="form-note">Format: id, id_sala, nume_activitate, data, ora_start, ora_end</p>
+
+        <div class="form-field">
+            <label for="activities-csv-file">Fisier CSV</label>
+            <input type="file" id="activities-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa CSV</button>
+    </form>
 </section>
+<?php endif; ?>
 
 <section class="panel">
     <h3>Calendar programari</h3>
@@ -178,15 +251,19 @@ require 'includes/header.php';
                         <td><?= e($activity['nume_activitate']) ?></td>
                         <td><?= e($activity['nume_sala']) ?></td>
                         <td>
-                            <div class="action-list">
-                                <a class="button compact secondary" href="activities.php?edit=<?= e($activity['id']) ?>">Modifica</a>
-                                <form action="activities.php" method="POST" class="inline-form">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?= e($activity['id']) ?>">
-                                    <button type="submit" class="compact danger">Sterge</button>
-                                </form>
-                            </div>
+                            <?php if ($canManageActivitySchedule): ?>
+                                <div class="action-list">
+                                    <a class="button compact secondary" href="activities.php?edit=<?= e($activity['id']) ?>">Modifica</a>
+                                    <form action="activities.php" method="POST" class="inline-form">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= e($activity['id']) ?>">
+                                        <button type="submit" class="compact danger">Sterge</button>
+                                    </form>
+                                </div>
+                            <?php else: ?>
+                                <span class="empty-state">Vizualizare</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

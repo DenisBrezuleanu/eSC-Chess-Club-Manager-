@@ -4,7 +4,7 @@ require_once 'includes/config.php';
 require_once 'includes/functions.php';
 
 $members = $pdo->query("SELECT id, nume FROM members ORDER BY nume ASC")->fetchAll();
-$memberId = (int)($_GET['member_id'] ?? 0);
+$memberId = is_member() ? current_member_id() : (int)($_GET['member_id'] ?? 0);
 
 if ($memberId === 0 && $members) {
     $memberId = (int)$members[0]['id'];
@@ -36,18 +36,20 @@ if ($memberId > 0) {
     $history = $stmt->fetchAll();
 }
 
-$pageTitle = 'eSC - Istoric performante';
+$pageTitle = is_member() ? 'eSC - Istoricul meu' : 'eSC - Istoric performante';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Istoric performante</h2>
+    <h2><?= is_member() ? 'Istoricul meu de performante' : 'Istoric performante' ?></h2>
     <p>Timeline-ul este construit dintr-un JOIN SQL intre membri, participari si competitii.</p>
 </section>
 
+<?php if (!is_member()): ?>
 <form action="performance_history.php" method="GET" class="form-card compact-form">
     <div class="form-field">
         <label for="history-member">Membru</label>
         <select id="history-member" name="member_id" required>
+            <option value="">Alege membrul</option>
             <?php foreach ($members as $member): ?>
                 <option value="<?= e($member['id']) ?>"<?= selected_attr($memberId, $member['id']) ?>>
                     <?= e($member['nume']) ?>
@@ -57,14 +59,17 @@ require 'includes/header.php';
     </div>
     <button type="submit">Afiseaza istoric</button>
 </form>
+<?php else: ?>
+    <div class="alert-success"><?= e(role_read_only_notice('istoricul tau competitional')) ?></div>
+<?php endif; ?>
 
 <section class="panel">
     <h3><?= $selectedMember ? e($selectedMember['nume']) : 'Niciun membru selectat' ?></h3>
 
     <?php if ($history): ?>
-        <div class="timeline" aria-label="Timeline performante">
+        <div class="timeline" role="list" aria-label="Timeline performante">
             <?php foreach ($history as $item): ?>
-                <article class="timeline-item">
+                <div class="timeline-item" role="listitem">
                     <div class="timeline-content">
                         <span class="timeline-date"><?= e($item['data']) ?></span>
                         <h4><?= e($item['nume']) ?></h4>
@@ -74,7 +79,7 @@ require 'includes/header.php';
                             punctaj <?= e(number_format((float)$item['punctaj_obtinut'], 2, '.', '')) ?>
                         </p>
                     </div>
-                </article>
+                </div>
             <?php endforeach; ?>
         </div>
     <?php else: ?>

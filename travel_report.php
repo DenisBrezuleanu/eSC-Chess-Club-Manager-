@@ -3,6 +3,8 @@ require_once 'includes/auth_check.php';
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 
+role_guard(is_admin(), 'Doar administratorul poate accesa rapoartele financiare.');
+
 $id = (int)($_GET['id'] ?? 0);
 
 if ($id > 0) {
@@ -27,7 +29,7 @@ require 'includes/header.php';
     <p>Raport pregatit pentru tiparire in alb-negru.</p>
 </section>
 
-<section class="panel no-print">
+<div class="panel no-print">
     <div class="section-heading">
         <p class="print-instruction">Pentru tiparire, apasa Ctrl+P / Cmd+P.</p>
         <div class="action-list">
@@ -35,7 +37,7 @@ require 'includes/header.php';
             <a class="button" href="export_decont.php<?= $id > 0 ? '?id=' . e($id) : '' ?>">Export CSV</a>
         </div>
     </div>
-</section>
+</div>
 
 <section class="print-report">
     <h3><?= $id > 0 ? 'Decont individual' : 'Raport general deconturi' ?></h3>

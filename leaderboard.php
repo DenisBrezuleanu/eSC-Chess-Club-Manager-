@@ -32,6 +32,7 @@ require 'includes/header.php';
     <div class="form-field">
         <label for="leaderboard-competition">Competitie</label>
         <select id="leaderboard-competition" name="competition_id" required>
+            <option value="">Alege competitia</option>
             <?php foreach ($competitions as $competition): ?>
                 <option value="<?= e($competition['id']) ?>"<?= selected_attr($competitionId, $competition['id']) ?>>
                     <?= e($competition['nume']) ?> - <?= e($competition['data']) ?>

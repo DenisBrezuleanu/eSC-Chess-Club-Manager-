@@ -5,17 +5,34 @@ $pageTitle = $pageTitle ?? 'eSC - Chess Club Manager';
 $bodyClass = $bodyClass ?? '';
 $includePrintCss = $includePrintCss ?? false;
 
-$navItems = [
-    ['href' => 'index.php', 'label' => 'Acasa', 'match' => ['index.php']],
-    ['href' => 'coaches.php', 'label' => 'Antrenori', 'match' => ['coaches.php']],
-    ['href' => 'rooms.php', 'label' => 'Sali', 'match' => ['rooms.php']],
-    ['href' => 'activities.php', 'label' => 'Activitati', 'match' => ['activities.php']],
-    ['href' => 'members.php', 'label' => 'Membri', 'match' => ['members.php']],
-    ['href' => 'competitions.php', 'label' => 'Competitii', 'match' => ['competitions.php', 'leaderboard.php']],
-    ['href' => 'performance_history.php', 'label' => 'Istoric', 'match' => ['performance_history.php']],
-    ['href' => 'travel_expenses.php', 'label' => 'Deconturi', 'match' => ['travel_expenses.php']],
-    ['href' => 'travel_report.php', 'label' => 'Raport', 'match' => ['travel_report.php']],
+$navItemsByRole = [
+    'admin' => [
+        ['href' => 'index.php', 'label' => 'Acasa', 'match' => ['index.php']],
+        ['href' => 'members.php', 'label' => 'Membri', 'match' => ['members.php']],
+        ['href' => 'coaches.php', 'label' => 'Antrenori', 'match' => ['coaches.php']],
+        ['href' => 'rooms.php', 'label' => 'Sali', 'match' => ['rooms.php']],
+        ['href' => 'activities.php', 'label' => 'Activitati', 'match' => ['activities.php']],
+        ['href' => 'competitions.php', 'label' => 'Competitii', 'match' => ['competitions.php', 'leaderboard.php']],
+        ['href' => 'performance_history.php', 'label' => 'Istoric', 'match' => ['performance_history.php']],
+        ['href' => 'travel_expenses.php', 'label' => 'Deconturi', 'match' => ['travel_expenses.php']],
+        ['href' => 'travel_report.php', 'label' => 'Raport', 'match' => ['travel_report.php']],
+    ],
+    'coach' => [
+        ['href' => 'index.php', 'label' => 'Acasa', 'match' => ['index.php']],
+        ['href' => 'activities.php', 'label' => 'Program', 'match' => ['activities.php']],
+        ['href' => 'members.php', 'label' => 'Jucatori', 'match' => ['members.php']],
+        ['href' => 'competitions.php', 'label' => 'Competitii', 'match' => ['competitions.php', 'leaderboard.php']],
+        ['href' => 'performance_history.php', 'label' => 'Istoric', 'match' => ['performance_history.php']],
+    ],
+    'member' => [
+        ['href' => 'index.php', 'label' => 'Acasa', 'match' => ['index.php']],
+        ['href' => 'members.php', 'label' => 'Profil', 'match' => ['members.php']],
+        ['href' => 'activities.php', 'label' => 'Program', 'match' => ['activities.php']],
+        ['href' => 'competitions.php', 'label' => 'Competitii', 'match' => ['competitions.php', 'leaderboard.php']],
+        ['href' => 'performance_history.php', 'label' => 'Istoricul meu', 'match' => ['performance_history.php']],
+    ],
 ];
+$navItems = $navItemsByRole[current_user_role()] ?? $navItemsByRole['member'];
 ?>
 <!DOCTYPE html>
 <html lang="ro">
@@ -29,7 +46,8 @@ $navItems = [
     <?php endif; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
-    <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Meniu principal">
+    <a class="skip-link" href="#main-content">Sari la continut</a>
+    <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Deschide sau inchide meniul principal" aria-controls="site-nav">
 
     <header class="site-header">
         <div>
@@ -42,16 +60,16 @@ $navItems = [
         </label>
     </header>
 
-    <nav class="site-nav" aria-label="Navigatie principala">
+    <nav id="site-nav" class="site-nav" aria-label="Navigatie principala">
         <?php foreach ($navItems as $item): ?>
             <?php $isActive = is_active_page($item['match']); ?>
             <a href="<?= e($item['href']) ?>" class="<?= $isActive ? 'active' : '' ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
                 <?= e($item['label']) ?>
             </a>
         <?php endforeach; ?>
-        <a href="logout.php">Logout<?= isset($_SESSION['username']) ? ' (' . e($_SESSION['username']) . ')' : '' ?></a>
+        <a href="logout.php">Logout<?= isset($_SESSION['username']) ? ' (' . e($_SESSION['username']) . ' - ' . current_user_role_label() . ')' : '' ?></a>
     </nav>
 
     <?php require __DIR__ . '/../plugin_notificari.php'; ?>
 
-    <main class="page-shell">
+    <main id="main-content" class="page-shell" tabindex="-1">

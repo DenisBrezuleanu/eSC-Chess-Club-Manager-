@@ -3,6 +3,8 @@ require_once 'includes/auth_check.php';
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 
+role_guard(is_admin(), 'Doar administratorul poate accesa deconturile si rapoartele financiare.');
+
 $message = '';
 $messageType = '';
 
@@ -47,6 +49,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $messageType = 'alert-success';
+    }
+
+    if ($action === 'import_csv') {
+        $stmt = $pdo->prepare("
+            INSERT INTO travel_expenses (id, destinatie, data, scop, cost_transport, cost_cazare, cost_masa, total)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $existsStmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM travel_expenses
+            WHERE id = ?
+               OR (LOWER(destinatie) = LOWER(?) AND data = ? AND LOWER(scop) = LOWER(?)
+                   AND cost_transport = ? AND cost_cazare = ? AND cost_masa = ?)
+        ");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $existsStmt): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $destination = trim($row['destinatie'] ?? '');
+            $date = trim($row['data'] ?? '');
+            $purpose = trim($row['scop'] ?? '');
+            $transport = isset($row['cost_transport']) ? (float)$row['cost_transport'] : 0;
+            $accommodation = isset($row['cost_cazare']) ? (float)$row['cost_cazare'] : 0;
+            $meals = isset($row['cost_masa']) ? (float)$row['cost_masa'] : 0;
+            $total = $transport + $accommodation + $meals;
+
+            if ($id === null || $id <= 0 || $destination === '' || $date === '' || $purpose === '') {
+                return 'invalid';
+            }
+
+            $existsStmt->execute([$id, $destination, $date, $purpose, $transport, $accommodation, $meals]);
+
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$id, $destination, $date, $purpose, $transport, $accommodation, $meals, $total]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('deconturi', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
 }
 
@@ -117,6 +161,21 @@ require 'includes/header.php';
         <?php if ($editExpense): ?>
             <a class="button secondary" href="travel_expenses.php">Anuleaza editarea</a>
         <?php endif; ?>
+    </form>
+
+    <form action="travel_expenses.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_csv">
+
+        <h3>Import deconturi CSV</h3>
+        <p class="form-note">Format: id, destinatie, data, scop, cost_transport, cost_cazare, cost_masa, total</p>
+
+        <div class="form-field">
+            <label for="expenses-csv-file">Fisier CSV</label>
+            <input type="file" id="expenses-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa CSV</button>
     </form>
 </section>
 

@@ -5,9 +5,16 @@ require_once 'includes/functions.php';
 
 $message = '';
 $messageType = '';
+$canManageMembers = can_manage_admin_data();
+$isMemberProfileView = is_member();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    if (!$canManageMembers) {
+        $message = 'Nu ai permisiunea necesara pentru a modifica membrii.';
+        $messageType = 'alert-error';
+    } else {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
@@ -52,71 +59,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'import_csv') {
-        if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
-            $message = 'Te rugam sa alegi un fisier CSV valid.';
-            $messageType = 'alert-error';
-        } else {
-            $handle = fopen($_FILES['csv_file']['tmp_name'], 'r');
-            $importedCount = 0;
+        $stmt = $pdo->prepare("
+            INSERT INTO members (nume, tip_membru, nivel_joc, id_antrenor_asociat)
+            VALUES (?, ?, ?, ?)
+        ");
+        $stmtWithId = $pdo->prepare("
+            INSERT INTO members (id, nume, tip_membru, nivel_joc, id_antrenor_asociat)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $memberExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM members WHERE id = ? OR LOWER(nume) = LOWER(?)");
+        $coachExistsStmt = $pdo->prepare("SELECT COUNT(*) FROM coaches WHERE id = ?");
+        $validTypes = ['junior', 'senior', 'amator', 'pro'];
 
-            if ($handle === false) {
-                $message = 'Eroare la deschiderea fisierului CSV.';
-                $messageType = 'alert-error';
-            } else {
-                $stmt = $pdo->prepare("
-                    INSERT INTO members (nume, tip_membru, nivel_joc, id_antrenor_asociat)
-                    VALUES (?, ?, ?, ?)
-                ");
-                $firstLine = true;
-                $validTypes = ['junior', 'senior', 'amator', 'pro'];
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $stmtWithId, $memberExistsStmt, $coachExistsStmt, $validTypes): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $nume = trim($row['nume'] ?? '');
+            $tipMembru = strtolower(trim($row['tip_membru'] ?? 'amator'));
+            $nivelJoc = trim($row['nivel_joc'] ?? '');
+            $coachValue = $row['id_antrenor_asociat'] ?? ($row['id_antrenor'] ?? null);
+            $coachId = is_numeric($coachValue) ? (int)$coachValue : null;
 
-                while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-                    if ($firstLine) {
-                        $firstLine = false;
-
-                        if (isset($data[0]) && strtolower(trim($data[0])) === 'nume') {
-                            continue;
-                        }
-                    }
-
-                    if (count($data) < 3) {
-                        continue;
-                    }
-
-                    $nume = trim($data[0]);
-                    $tipMembru = strtolower(trim($data[1]));
-                    $nivelJoc = trim($data[2]);
-                    $coachId = isset($data[3]) && is_numeric($data[3]) ? (int)$data[3] : null;
-
-                    if ($coachId === 0) {
-                        $coachId = null;
-                    }
-
-                    if (!in_array($tipMembru, $validTypes, true)) {
-                        $tipMembru = 'amator';
-                    }
-
-                    if ($nume !== '') {
-                        $stmt->execute([$nume, $tipMembru, $nivelJoc, $coachId]);
-                        $importedCount++;
-                    }
-                }
-
-                fclose($handle);
-                $message = "Au fost importati $importedCount membri din fisierul CSV.";
-                $messageType = 'alert-success';
+            if ($nume === '') {
+                return 'invalid';
             }
-        }
+
+            $memberExistsStmt->execute([$id ?? 0, $nume]);
+
+            if ((int)$memberExistsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            if (!in_array($tipMembru, $validTypes, true)) {
+                $tipMembru = 'amator';
+            }
+
+            if ($coachId === 0) {
+                $coachId = null;
+            }
+
+            if ($coachId !== null) {
+                $coachExistsStmt->execute([$coachId]);
+
+                if ((int)$coachExistsStmt->fetchColumn() === 0) {
+                    $coachId = null;
+                }
+            }
+
+            if ($id !== null && $id > 0) {
+                $stmtWithId->execute([$id, $nume, $tipMembru, $nivelJoc, $coachId]);
+            } else {
+                $stmt->execute([$nume, $tipMembru, $nivelJoc, $coachId]);
+            }
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('membri', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
+    }
     }
 }
 
 $coaches = $pdo->query("SELECT * FROM coaches ORDER BY nume ASC")->fetchAll();
-$members = $pdo->query("
-    SELECT members.*, coaches.nume AS nume_antrenor
-    FROM members
-    LEFT JOIN coaches ON members.id_antrenor_asociat = coaches.id
-    ORDER BY members.id DESC
-")->fetchAll();
+if ($isMemberProfileView) {
+    $stmt = $pdo->prepare("
+        SELECT members.*, coaches.nume AS nume_antrenor
+        FROM members
+        LEFT JOIN coaches ON members.id_antrenor_asociat = coaches.id
+        WHERE members.id = ?
+        ORDER BY members.id DESC
+    ");
+    $stmt->execute([current_member_id()]);
+    $members = $stmt->fetchAll();
+} else {
+    $members = $pdo->query("
+        SELECT members.*, coaches.nume AS nume_antrenor
+        FROM members
+        LEFT JOIN coaches ON members.id_antrenor_asociat = coaches.id
+        ORDER BY members.id DESC
+    ")->fetchAll();
+}
 
 $editMember = null;
 if (isset($_GET['edit'])) {
@@ -125,18 +147,22 @@ if (isset($_GET['edit'])) {
     $editMember = $stmt->fetch();
 }
 
-$pageTitle = 'eSC - Gestiune membri';
+$pageTitle = $isMemberProfileView ? 'eSC - Profil membru' : 'eSC - Gestiune membri';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Gestiunea membrilor clubului</h2>
-    <p>Administreaza membri, tipul de joc si antrenorul asociat.</p>
+    <h2><?= $isMemberProfileView ? 'Profilul meu de membru' : 'Gestiunea membrilor clubului' ?></h2>
+    <p><?= $isMemberProfileView ? 'Vizualizeaza datele tale si acceseaza istoricul competitional.' : 'Administreaza membri, tipul de joc si antrenorul asociat.' ?></p>
 </section>
 
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
+<?php if (!$canManageMembers): ?>
+    <div class="alert-success"><?= e(role_read_only_notice($isMemberProfileView ? 'profilul tau' : 'membri')) ?></div>
+<?php endif; ?>
 
+<?php if ($canManageMembers): ?>
 <section class="form-grid">
     <form action="members.php" method="POST" class="form-card">
         <?= csrf_field() ?>
@@ -153,6 +179,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="member-tip">Tip membru</label>
             <select id="member-tip" name="tip_membru" required>
+                <option value="">Alege tipul membrului</option>
                 <?php foreach (['junior', 'senior', 'amator', 'pro'] as $option): ?>
                     <option value="<?= e($option) ?>"<?= selected_attr($editMember['tip_membru'] ?? 'amator', $option) ?>>
                         <?= e(ucfirst($option)) ?>
@@ -189,7 +216,7 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="import_csv">
 
         <h3>Import membri CSV</h3>
-        <p class="form-note">Format: nume, tip_membru, nivel_joc, id_antrenor</p>
+        <p class="form-note">Format: id, nume, tip_membru, nivel_joc, id_antrenor_asociat</p>
 
         <div class="form-field">
             <label for="csv-file">Fisier CSV</label>
@@ -199,6 +226,7 @@ require 'includes/header.php';
         <button type="submit">Importa CSV</button>
     </form>
 </section>
+<?php endif; ?>
 
 <section class="panel">
     <h3>Lista membrilor</h3>
@@ -224,14 +252,18 @@ require 'includes/header.php';
                         <td><?= e($member['nume_antrenor'] ?? 'N/A') ?></td>
                         <td>
                             <div class="action-list">
-                                <a class="button compact secondary" href="members.php?edit=<?= e($member['id']) ?>">Modifica</a>
+                                <?php if ($canManageMembers): ?>
+                                    <a class="button compact secondary" href="members.php?edit=<?= e($member['id']) ?>">Modifica</a>
+                                <?php endif; ?>
                                 <a class="button compact secondary" href="performance_history.php?member_id=<?= e($member['id']) ?>">Istoric</a>
-                                <form action="members.php" method="POST" class="inline-form">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?= e($member['id']) ?>">
-                                    <button type="submit" class="compact danger">Sterge</button>
-                                </form>
+                                <?php if ($canManageMembers): ?>
+                                    <form action="members.php" method="POST" class="inline-form">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= e($member['id']) ?>">
+                                        <button type="submit" class="compact danger">Sterge</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

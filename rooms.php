@@ -5,9 +5,15 @@ require_once 'includes/functions.php';
 
 $message = '';
 $messageType = '';
+$canManageRooms = can_manage_admin_data();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    if (!$canManageRooms) {
+        $message = 'Nu ai permisiunea necesara pentru a modifica salile.';
+        $messageType = 'alert-error';
+    } else {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
@@ -37,6 +43,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $messageType = 'alert-success';
     }
+
+    if ($action === 'import_csv') {
+        $stmt = $pdo->prepare("INSERT INTO rooms (id, nume, capacitate, dotari) VALUES (?, ?, ?, ?)");
+        $existsStmt = $pdo->prepare("SELECT COUNT(*) FROM rooms WHERE id = ? OR LOWER(nume) = LOWER(?)");
+
+        $result = import_uploaded_csv('csv_file', function (array $row) use ($stmt, $existsStmt): string {
+            $id = isset($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $nume = trim($row['nume'] ?? '');
+            $capacitate = isset($row['capacitate']) ? (int)$row['capacitate'] : 0;
+            $dotari = trim($row['dotari'] ?? '');
+
+            if ($id === null || $id <= 0 || $nume === '' || $capacitate <= 0) {
+                return 'invalid';
+            }
+
+            $existsStmt->execute([$id, $nume]);
+
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                return 'skipped';
+            }
+
+            $stmt->execute([$id, $nume, $capacitate, $dotari]);
+
+            return 'imported';
+        });
+
+        $message = csv_import_summary('sali', $result);
+        $messageType = $result['error'] ? 'alert-error' : 'alert-success';
+    }
+    }
 }
 
 $rooms = $pdo->query("SELECT * FROM rooms ORDER BY id DESC")->fetchAll();
@@ -59,7 +95,11 @@ require 'includes/header.php';
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
+<?php if (!$canManageRooms): ?>
+    <div class="alert-success"><?= e(role_read_only_notice('sali')) ?></div>
+<?php endif; ?>
 
+<?php if ($canManageRooms): ?>
 <section class="form-grid">
     <form action="rooms.php" method="POST" class="form-card">
         <?= csrf_field() ?>
@@ -88,7 +128,23 @@ require 'includes/header.php';
             <a class="button secondary" href="rooms.php">Anuleaza editarea</a>
         <?php endif; ?>
     </form>
+
+    <form action="rooms.php" method="POST" enctype="multipart/form-data" class="form-card">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="import_csv">
+
+        <h3>Import sali CSV</h3>
+        <p class="form-note">Format: id, nume, capacitate, dotari</p>
+
+        <div class="form-field">
+            <label for="rooms-csv-file">Fisier CSV</label>
+            <input type="file" id="rooms-csv-file" name="csv_file" accept=".csv" required>
+        </div>
+
+        <button type="submit">Importa CSV</button>
+    </form>
 </section>
+<?php endif; ?>
 
 <section class="panel">
     <h3>Lista salilor</h3>
@@ -111,15 +167,19 @@ require 'includes/header.php';
                         <td><?= e($room['capacitate']) ?></td>
                         <td><?= e($room['dotari']) ?></td>
                         <td>
-                            <div class="action-list">
-                                <a class="button compact secondary" href="rooms.php?edit=<?= e($room['id']) ?>">Modifica</a>
-                                <form action="rooms.php" method="POST" class="inline-form">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?= e($room['id']) ?>">
-                                    <button type="submit" class="compact danger">Sterge</button>
-                                </form>
-                            </div>
+                            <?php if ($canManageRooms): ?>
+                                <div class="action-list">
+                                    <a class="button compact secondary" href="rooms.php?edit=<?= e($room['id']) ?>">Modifica</a>
+                                    <form action="rooms.php" method="POST" class="inline-form">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= e($room['id']) ?>">
+                                        <button type="submit" class="compact danger">Sterge</button>
+                                    </form>
+                                </div>
+                            <?php else: ?>
+                                <span class="empty-state">Vizualizare</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
