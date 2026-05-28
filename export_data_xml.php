@@ -3,7 +3,7 @@ require_once 'includes/auth_check.php';
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 
-role_guard(is_admin(), 'Doar administratorul poate exporta datele aplicatiei.');
+role_guard(is_admin(), 'Doar administratorul poate exporta datele aplicației.');
 
 function xml_safe_name(string $name): string
 {

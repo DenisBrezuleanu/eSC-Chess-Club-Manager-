@@ -91,7 +91,7 @@ function current_coach_id(): int
     return (int)($_SESSION['coach_id'] ?? 0);
 }
 
-function role_guard(bool $allowed, string $message = 'Nu ai permisiunea necesara pentru aceasta actiune.'): void
+function role_guard(bool $allowed, string $message = 'Nu ai permisiunea necesară pentru această acțiune.'): void
 {
     if (!$allowed) {
         $_SESSION['flash_error'] = $message;
@@ -113,7 +113,7 @@ function role_read_only_notice(string $area): string
         return '';
     }
 
-    return 'Esti autentificat ca ' . current_user_role_label() . '. Pentru ' . $area . ', ai acces de vizualizare.';
+    return 'Ești autentificat ca ' . current_user_role_label() . '. Pentru ' . $area . ', ai acces de vizualizare.';
 }
 
 function is_active_page($matches): bool
@@ -140,14 +140,14 @@ function import_uploaded_csv(string $fieldName, callable $handleRow): array
     ];
 
     if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
-        $result['error'] = 'Te rugam sa alegi un fisier CSV valid.';
+        $result['error'] = 'Te rugăm să alegi un fișier CSV valid.';
         return $result;
     }
 
     $handle = fopen($_FILES[$fieldName]['tmp_name'], 'r');
 
     if ($handle === false) {
-        $result['error'] = 'Eroare la deschiderea fisierului CSV.';
+        $result['error'] = 'Eroare la deschiderea fișierului CSV.';
         return $result;
     }
 
@@ -155,7 +155,7 @@ function import_uploaded_csv(string $fieldName, callable $handleRow): array
 
     if ($headers === false) {
         fclose($handle);
-        $result['error'] = 'Fisierul CSV este gol.';
+        $result['error'] = 'Fișierul CSV este gol.';
         return $result;
     }
 
@@ -198,18 +198,18 @@ function csv_import_summary(string $entityPlural, array $result): string
         return $result['error'];
     }
 
-    $message = "Randuri importate pentru {$entityPlural}: {$result['imported']}.";
+    $message = "Rânduri importate pentru {$entityPlural}: {$result['imported']}.";
 
     if ($result['skipped'] > 0) {
-        $message .= " Randuri deja existente omise: {$result['skipped']}.";
+        $message .= " Rânduri deja existente omise: {$result['skipped']}.";
     }
 
     if ($result['missing_reference'] > 0) {
-        $message .= " Randuri omise din cauza unor referinte inexistente: {$result['missing_reference']}.";
+        $message .= " Rânduri omise din cauza unor referințe inexistente: {$result['missing_reference']}.";
     }
 
     if ($result['invalid'] > 0) {
-        $message .= " Randuri invalide omise: {$result['invalid']}.";
+        $message .= " Rânduri invalide omise: {$result['invalid']}.";
     }
 
     return $message;

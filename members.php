@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if (!$canManageMembers) {
-        $message = 'Nu ai permisiunea necesara pentru a modifica membrii.';
+        $message = 'Nu ai permisiunea necesară pentru a modifica membrii.';
         $messageType = 'alert-error';
     } else {
 
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM members WHERE id = ?");
 
         if ($stmt->execute([$id])) {
-            $message = 'Membrul a fost sters.';
+            $message = 'Membrul a fost șters.';
             $messageType = 'alert-success';
         }
     }
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?)
             ");
             $stmt->execute([$nume, $tipMembru, $nivelJoc, $coachId]);
-            $message = 'Membrul a fost adaugat.';
+            $message = 'Membrul a fost adăugat.';
         }
 
         $messageType = 'alert-success';
@@ -152,14 +152,14 @@ require 'includes/header.php';
 ?>
 <section class="page-title">
     <h2><?= $isMemberProfileView ? 'Profilul meu de membru' : 'Gestiunea membrilor clubului' ?></h2>
-    <p><?= $isMemberProfileView ? 'Vizualizeaza datele tale si acceseaza istoricul competitional.' : 'Administreaza membri, tipul de joc si antrenorul asociat.' ?></p>
+    <p><?= $isMemberProfileView ? 'Vizualizează datele tale și accesează istoricul competițional.' : 'Administrează membri, tipul de joc și antrenorul asociat.' ?></p>
 </section>
 
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
 <?php if (!$canManageMembers): ?>
-    <div class="alert-success"><?= e(role_read_only_notice($isMemberProfileView ? 'profilul tau' : 'membri')) ?></div>
+    <div class="alert-success"><?= e(role_read_only_notice($isMemberProfileView ? 'profilul tău' : 'membri')) ?></div>
 <?php endif; ?>
 
 <?php if ($canManageMembers): ?>
@@ -169,7 +169,7 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?= e($editMember['id'] ?? '') ?>">
 
-        <h3><?= $editMember ? 'Editeaza membru' : 'Adauga membru' ?></h3>
+        <h3><?= $editMember ? 'Editează membru' : 'Adaugă membru' ?></h3>
 
         <div class="form-field">
             <label for="member-nume">Nume membru</label>
@@ -196,7 +196,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="member-coach">Antrenor asociat</label>
             <select id="member-coach" name="id_antrenor_asociat">
-                <option value="">Fara antrenor</option>
+                <option value="">Fără antrenor</option>
                 <?php foreach ($coaches as $coach): ?>
                     <option value="<?= e($coach['id']) ?>"<?= selected_attr($editMember['id_antrenor_asociat'] ?? '', $coach['id']) ?>>
                         <?= e($coach['nume']) ?>
@@ -205,9 +205,9 @@ require 'includes/header.php';
             </select>
         </div>
 
-        <button type="submit"><?= $editMember ? 'Modifica' : 'Adauga' ?> membru</button>
+        <button type="submit"><?= $editMember ? 'Modifică' : 'Adaugă' ?> membru</button>
         <?php if ($editMember): ?>
-            <a class="button secondary" href="members.php">Anuleaza editarea</a>
+            <a class="button secondary" href="members.php">Anulează editarea</a>
         <?php endif; ?>
     </form>
 
@@ -219,11 +219,11 @@ require 'includes/header.php';
         <p class="form-note">Format: id, nume, tip_membru, nivel_joc, id_antrenor_asociat</p>
 
         <div class="form-field">
-            <label for="csv-file">Fisier CSV</label>
+            <label for="csv-file">Fișier CSV</label>
             <input type="file" id="csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa CSV</button>
+        <button type="submit">Importă CSV</button>
     </form>
 </section>
 <?php endif; ?>
@@ -239,7 +239,7 @@ require 'includes/header.php';
                     <th>Tip membru</th>
                     <th>Nivel joc</th>
                     <th>Antrenor asociat</th>
-                    <th>Actiuni</th>
+                    <th>Acțiuni</th>
                 </tr>
             </thead>
             <tbody>
@@ -253,7 +253,7 @@ require 'includes/header.php';
                         <td>
                             <div class="action-list">
                                 <?php if ($canManageMembers): ?>
-                                    <a class="button compact secondary" href="members.php?edit=<?= e($member['id']) ?>">Modifica</a>
+                                    <a class="button compact secondary" href="members.php?edit=<?= e($member['id']) ?>">Modifică</a>
                                 <?php endif; ?>
                                 <a class="button compact secondary" href="performance_history.php?member_id=<?= e($member['id']) ?>">Istoric</a>
                                 <?php if ($canManageMembers): ?>
@@ -261,7 +261,7 @@ require 'includes/header.php';
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= e($member['id']) ?>">
-                                        <button type="submit" class="compact danger">Sterge</button>
+                                        <button type="submit" class="compact danger">Șterge</button>
                                     </form>
                                 <?php endif; ?>
                             </div>
@@ -270,7 +270,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$members): ?>
                     <tr>
-                        <td colspan="6" class="centered">Nu exista membri inregistrati.</td>
+                        <td colspan="6" class="centered">Nu există membri înregistrați.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

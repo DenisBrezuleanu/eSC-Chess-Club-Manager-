@@ -18,7 +18,7 @@ function get_competition_leaderboard(PDO $pdo, int $competitionId): array
 function render_leaderboard_html(array $participants): string
 {
     if (count($participants) === 0) {
-        return '<p class="empty-state">Nu exista participanti pentru aceasta competitie.</p>';
+        return '<p class="empty-state">Nu există participanți pentru această competiție.</p>';
     }
 
     ob_start();

@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('index.php');
     }
 
-    $error = 'Nume de utilizator sau parola incorecte.';
+    $error = 'Nume de utilizator sau parolă incorecte.';
 }
 ?>
 <!DOCTYPE html>
@@ -84,12 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="login-page">
-    <a class="skip-link" href="#main-content">Sari la continut</a>
+    <a class="skip-link" href="#main-content">Sari la conținut</a>
 
     <header class="site-header login-header">
         <div>
             <h1>eSC - Autentificare</h1>
-            <p>Acces administrare club de sah</p>
+            <p>Acces administrare club de șah</p>
         </div>
     </header>
 
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="form-field">
-                <label for="password">Parola</label>
+                <label for="password">Parolă</label>
                 <input type="password" id="password" name="password" required autocomplete="current-password">
             </div>
 

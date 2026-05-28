@@ -25,15 +25,15 @@ $includePrintCss = true;
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Raport decont deplasari</h2>
-    <p>Raport pregatit pentru tiparire in alb-negru.</p>
+    <h2>Raport decont deplasări</h2>
+    <p>Raport pregătit pentru tipărire în alb-negru.</p>
 </section>
 
 <div class="panel no-print">
     <div class="section-heading">
-        <p class="print-instruction">Pentru tiparire, apasa Ctrl+P / Cmd+P.</p>
+        <p class="print-instruction">Pentru tipărire, apasă Ctrl+P / Cmd+P.</p>
         <div class="action-list">
-            <a class="button secondary" href="travel_expenses.php">Inapoi la deconturi</a>
+            <a class="button secondary" href="travel_expenses.php">Înapoi la deconturi</a>
             <a class="button" href="export_decont.php<?= $id > 0 ? '?id=' . e($id) : '' ?>">Export CSV</a>
         </div>
     </div>
@@ -47,12 +47,12 @@ require 'includes/header.php';
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Destinatie</th>
+                    <th>Destinație</th>
                     <th>Data</th>
                     <th>Scop</th>
                     <th>Transport</th>
                     <th>Cazare</th>
-                    <th>Masa</th>
+                    <th>Masă</th>
                     <th>Total</th>
                 </tr>
             </thead>
@@ -71,7 +71,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$expenses): ?>
                     <tr>
-                        <td colspan="8" class="centered">Nu exista deconturi pentru raport.</td>
+                        <td colspan="8" class="centered">Nu există deconturi pentru raport.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

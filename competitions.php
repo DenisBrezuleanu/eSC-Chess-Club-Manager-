@@ -16,10 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $resultActions = ['add_participant', 'import_participants_csv', 'assign_award'];
 
     if (in_array($action, $adminCompetitionActions, true) && !$canManageCompetitions) {
-        $message = 'Nu ai permisiunea necesara pentru a modifica structura competitiilor sau premiilor.';
+        $message = 'Nu ai permisiunea necesară pentru a modifica structura competițiilor sau premiilor.';
         $messageType = 'alert-error';
     } elseif (in_array($action, $resultActions, true) && !$canManageResults) {
-        $message = 'Nu ai permisiunea necesara pentru a modifica rezultatele competitiilor.';
+        $message = 'Nu ai permisiunea necesară pentru a modifica rezultatele competițiilor.';
         $messageType = 'alert-error';
     } else {
 
@@ -34,12 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("UPDATE competitions SET nume = ?, data = ?, locatie = ?, tip = ? WHERE id = ?");
             $stmt->execute([$name, $date, $location, $type, $id]);
             $selectedCompetitionId = $id;
-            $message = 'Competitia a fost modificata.';
+            $message = 'Competiția a fost modificată.';
         } else {
             $stmt = $pdo->prepare("INSERT INTO competitions (nume, data, locatie, tip) VALUES (?, ?, ?, ?)");
             $stmt->execute([$name, $date, $location, $type]);
             $selectedCompetitionId = (int)$pdo->lastInsertId();
-            $message = 'Competitia a fost adaugata.';
+            $message = 'Competiția a fost adăugată.';
         }
 
         $messageType = 'alert-success';
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return 'imported';
         });
 
-        $message = csv_import_summary('competitii', $result);
+        $message = csv_import_summary('competiții', $result);
         $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
 
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt->execute([$id])) {
             $selectedCompetitionId = $selectedCompetitionId === $id ? 0 : $selectedCompetitionId;
-            $message = 'Competitia a fost stearsa.';
+            $message = 'Competiția a fost ștearsă.';
             $messageType = 'alert-success';
         }
     }
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$competitionId, $memberId, $score]);
 
         $selectedCompetitionId = $competitionId;
-        $message = 'Participantul a fost adaugat sau actualizat in clasament.';
+        $message = 'Participantul a fost adăugat sau actualizat în clasament.';
         $messageType = 'alert-success';
     }
 
@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return 'imported';
         });
 
-        $message = csv_import_summary('participanti', $result);
+        $message = csv_import_summary('participanți', $result);
         $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
 
@@ -305,21 +305,21 @@ $assignedAwards = $pdo->query("
     LIMIT 20
 ")->fetchAll();
 
-$pageTitle = 'eSC - Competitii si premii';
+$pageTitle = 'eSC - Competiții și premii';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Competitii, premii si clasamente</h2>
-    <p>Administreaza competitiile, inscrie participanti si genereaza clasamente server-side.</p>
+    <h2>Competiții, premii și clasamente</h2>
+    <p>Administrează competițiile, înscrie participanți și generează clasamente server-side.</p>
 </section>
 
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
 <?php if (!$canManageResults && !$canManageCompetitions): ?>
-    <div class="alert-success"><?= e(role_read_only_notice('competitii si clasamente')) ?></div>
+    <div class="alert-success"><?= e(role_read_only_notice('competiții și clasamente')) ?></div>
 <?php elseif (!$canManageCompetitions): ?>
-    <div class="alert-success">Esti autentificat ca <?= e(current_user_role_label()) ?>. Poti gestiona participanti, punctaje si premii acordate, dar competitiile si premiile se creeaza de catre admin.</div>
+    <div class="alert-success">Ești autentificat ca <?= e(current_user_role_label()) ?>. Poți gestiona participanți, punctaje și premii acordate, dar competițiile și premiile se creează de către admin.</div>
 <?php endif; ?>
 
 <?php if ($canManageCompetitions || $canManageResults): ?>
@@ -330,10 +330,10 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="save_competition">
         <input type="hidden" name="id" value="<?= e($editCompetition['id'] ?? '') ?>">
 
-        <h3><?= $editCompetition ? 'Editeaza competitie' : 'Adauga competitie' ?></h3>
+        <h3><?= $editCompetition ? 'Editează competiție' : 'Adaugă competiție' ?></h3>
 
         <div class="form-field">
-            <label for="competition-nume">Nume competitie</label>
+            <label for="competition-nume">Nume competiție</label>
             <input type="text" id="competition-nume" name="nume" value="<?= e($editCompetition['nume'] ?? '') ?>" required>
         </div>
 
@@ -343,14 +343,14 @@ require 'includes/header.php';
         </div>
 
         <div class="form-field">
-            <label for="competition-locatie">Locatie</label>
+            <label for="competition-locatie">Locație</label>
             <input type="text" id="competition-locatie" name="locatie" value="<?= e($editCompetition['locatie'] ?? '') ?>" required>
         </div>
 
         <div class="form-field">
             <label for="competition-tip">Tip</label>
             <select id="competition-tip" name="tip" required>
-                <option value="">Alege tipul competitiei</option>
+                <option value="">Alege tipul competiției</option>
                 <?php foreach (['Clasic', 'Rapid', 'Blitz', 'Intern', 'Extern'] as $type): ?>
                     <option value="<?= e($type) ?>"<?= selected_attr($editCompetition['tip'] ?? 'Clasic', $type) ?>>
                         <?= e($type) ?>
@@ -359,9 +359,9 @@ require 'includes/header.php';
             </select>
         </div>
 
-        <button type="submit"><?= $editCompetition ? 'Modifica' : 'Adauga' ?> competitie</button>
+        <button type="submit"><?= $editCompetition ? 'Modifică' : 'Adaugă' ?> competiție</button>
         <?php if ($editCompetition): ?>
-            <a class="button secondary" href="competitions.php?competition_id=<?= e($editCompetition['id']) ?>">Anuleaza editarea</a>
+            <a class="button secondary" href="competitions.php?competition_id=<?= e($editCompetition['id']) ?>">Anulează editarea</a>
         <?php endif; ?>
     </form>
     <?php endif; ?>
@@ -371,12 +371,12 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="add_participant">
 
-        <h3>Adauga participant</h3>
+        <h3>Adaugă participant</h3>
 
         <div class="form-field">
             <label for="participant-competition">Competitie</label>
             <select id="participant-competition" name="id_competitie" required>
-                <option value="">Alege competitia</option>
+                <option value="">Alege competiția</option>
                 <?php foreach ($competitions as $competition): ?>
                     <option value="<?= e($competition['id']) ?>"<?= selected_attr($selectedCompetitionId, $competition['id']) ?>>
                         <?= e($competition['nume']) ?> - <?= e($competition['data']) ?>
@@ -396,13 +396,13 @@ require 'includes/header.php';
         </div>
 
         <div class="form-field">
-            <label for="participant-score">Punctaj obtinut</label>
+            <label for="participant-score">Punctaj obținut</label>
             <input type="number" id="participant-score" name="punctaj_obtinut" min="0" step="0.01" required>
         </div>
 
-        <button type="submit"<?= (!$competitions || !$members) ? ' disabled' : '' ?>>Adauga participant</button>
+        <button type="submit"<?= (!$competitions || !$members) ? ' disabled' : '' ?>>Adaugă participant</button>
         <?php if (!$competitions || !$members): ?>
-            <p class="form-note">Ai nevoie de cel putin o competitie si un membru.</p>
+            <p class="form-note">Ai nevoie de cel puțin o competiție și un membru.</p>
         <?php endif; ?>
     </form>
     <?php endif; ?>
@@ -412,15 +412,15 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="import_competitions_csv">
 
-        <h3>Import competitii CSV</h3>
+        <h3>Import competiții CSV</h3>
         <p class="form-note">Format: id, nume, data_start, data_end, locatie, tip</p>
 
         <div class="form-field">
-            <label for="competitions-csv-file">Fisier CSV</label>
+            <label for="competitions-csv-file">Fișier CSV</label>
             <input type="file" id="competitions-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa competitii</button>
+        <button type="submit">Importă competiții</button>
     </form>
     <?php endif; ?>
 
@@ -429,15 +429,15 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="import_participants_csv">
 
-        <h3>Import participanti CSV</h3>
+        <h3>Import participanți CSV</h3>
         <p class="form-note">Format: id_competitie, id_membru, punctaj</p>
 
         <div class="form-field">
-            <label for="participants-csv-file">Fisier CSV</label>
+            <label for="participants-csv-file">Fișier CSV</label>
             <input type="file" id="participants-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa participanti</button>
+        <button type="submit">Importă participanți</button>
     </form>
     <?php endif; ?>
 </section>
@@ -445,16 +445,16 @@ require 'includes/header.php';
 
 <section class="content-grid">
     <div class="panel">
-        <h3>Competitii</h3>
+        <h3>Competiții</h3>
         <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
                         <th>Nume</th>
                         <th>Data</th>
-                        <th>Locatie</th>
+                        <th>Locație</th>
                         <th>Tip</th>
-                        <th>Actiuni</th>
+                        <th>Acțiuni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -469,13 +469,13 @@ require 'includes/header.php';
                                     <a class="button compact secondary" href="competitions.php?competition_id=<?= e($competition['id']) ?>">Clasament</a>
                                     <a class="button compact secondary" href="leaderboard.php?competition_id=<?= e($competition['id']) ?>">Pagina clasament</a>
                                     <?php if ($canManageCompetitions): ?>
-                                        <a class="button compact secondary" href="competitions.php?edit=<?= e($competition['id']) ?>&competition_id=<?= e($competition['id']) ?>">Modifica</a>
+                                        <a class="button compact secondary" href="competitions.php?edit=<?= e($competition['id']) ?>&competition_id=<?= e($competition['id']) ?>">Modifică</a>
                                         <form action="competitions.php" method="POST" class="inline-form">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="action" value="delete_competition">
                                             <input type="hidden" name="id" value="<?= e($competition['id']) ?>">
                                             <input type="hidden" name="id_competitie" value="<?= e($competition['id']) ?>">
-                                            <button type="submit" class="compact danger">Sterge</button>
+                                            <button type="submit" class="compact danger">Șterge</button>
                                         </form>
                                     <?php endif; ?>
                                 </div>
@@ -484,7 +484,7 @@ require 'includes/header.php';
                     <?php endforeach; ?>
                     <?php if (!$competitions): ?>
                         <tr>
-                            <td colspan="5" class="centered">Nu exista competitii inregistrate.</td>
+                            <td colspan="5" class="centered">Nu există competiții înregistrate.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -505,7 +505,7 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="save_award">
 
-        <h3>Creeaza premiu</h3>
+        <h3>Creează premiu</h3>
 
         <div class="form-field">
             <label for="award-nume">Nume premiu</label>
@@ -517,7 +517,7 @@ require 'includes/header.php';
             <textarea id="award-descriere" name="descriere" rows="3"></textarea>
         </div>
 
-        <button type="submit">Salveaza premiu</button>
+        <button type="submit">Salvează premiu</button>
     </form>
     <?php endif; ?>
 
@@ -526,7 +526,7 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="assign_award">
 
-        <h3>Acorda premiu</h3>
+        <h3>Acordă premiu</h3>
 
         <div class="form-field">
             <label for="assign-award">Premiu</label>
@@ -551,7 +551,7 @@ require 'includes/header.php';
         <div class="form-field">
             <label for="assign-competition">Competitie</label>
             <select id="assign-competition" name="id_competitie">
-                <option value="">Fara competitie</option>
+                <option value="">Fără competiție</option>
                 <?php foreach ($competitions as $competition): ?>
                     <option value="<?= e($competition['id']) ?>"<?= selected_attr($selectedCompetitionId, $competition['id']) ?>>
                         <?= e($competition['nume']) ?>
@@ -565,9 +565,9 @@ require 'includes/header.php';
             <input type="date" id="assign-date" name="data_acordare" value="<?= e(date('Y-m-d')) ?>" required>
         </div>
 
-        <button type="submit"<?= (!$awards || !$members) ? ' disabled' : '' ?>>Acorda premiu</button>
+        <button type="submit"<?= (!$awards || !$members) ? ' disabled' : '' ?>>Acordă premiu</button>
         <?php if (!$awards || !$members): ?>
-            <p class="form-note">Ai nevoie de cel putin un premiu si un membru.</p>
+            <p class="form-note">Ai nevoie de cel puțin un premiu și un membru.</p>
         <?php endif; ?>
     </form>
     <?php endif; ?>
@@ -581,11 +581,11 @@ require 'includes/header.php';
         <p class="form-note">Format: id, nume, descriere</p>
 
         <div class="form-field">
-            <label for="awards-csv-file">Fisier CSV</label>
+            <label for="awards-csv-file">Fișier CSV</label>
             <input type="file" id="awards-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa premii</button>
+        <button type="submit">Importă premii</button>
     </form>
     <?php endif; ?>
 
@@ -598,11 +598,11 @@ require 'includes/header.php';
         <p class="form-note">Format: id, id_award, id_membru, id_competitie, data_acordare</p>
 
         <div class="form-field">
-            <label for="member-awards-csv-file">Fisier CSV</label>
+            <label for="member-awards-csv-file">Fișier CSV</label>
             <input type="file" id="member-awards-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa premii acordate</button>
+        <button type="submit">Importă premii acordate</button>
     </form>
     <?php endif; ?>
 </section>
@@ -631,7 +631,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$assignedAwards): ?>
                     <tr>
-                        <td colspan="4" class="centered">Nu exista premii acordate.</td>
+                        <td colspan="4" class="centered">Nu există premii acordate.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

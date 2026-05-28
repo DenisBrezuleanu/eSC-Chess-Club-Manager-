@@ -27,18 +27,18 @@ $quickActions = [];
 
 if ($role === 'admin') {
     $dashboardTitle = 'Panou administrator';
-    $dashboardIntro = 'Privire rapida peste club si scurtaturi catre administrare.';
+    $dashboardIntro = 'Privire rapidă peste club și scurtături către administrare.';
 
     $dashboardCards = [
         ['href' => 'members.php', 'value' => $stats['members'], 'label' => 'Membri'],
         ['href' => 'coaches.php', 'value' => $stats['coaches'], 'label' => 'Antrenori'],
-        ['href' => 'rooms.php', 'value' => $stats['rooms'], 'label' => 'Sali'],
-        ['href' => 'competitions.php', 'value' => $stats['competitions'], 'label' => 'Competitii'],
+        ['href' => 'rooms.php', 'value' => $stats['rooms'], 'label' => 'Săli'],
+        ['href' => 'competitions.php', 'value' => $stats['competitions'], 'label' => 'Competiții'],
     ];
 
     $quickActions = [
         ['href' => 'members.php', 'label' => 'Import membri'],
-        ['href' => 'competitions.php', 'label' => 'Competitii si premii'],
+        ['href' => 'competitions.php', 'label' => 'Competiții și premii'],
         ['href' => 'export_data_json.php', 'label' => 'Export JSON'],
         ['href' => 'export_data_xml.php', 'label' => 'Export XML', 'secondary' => true],
         ['href' => 'travel_report.php', 'label' => 'Raport deconturi', 'secondary' => true],
@@ -73,20 +73,20 @@ if ($role === 'admin') {
     $upcomingActivities = $stmt->fetchAll();
 
     $dashboardTitle = 'Panou antrenor';
-    $dashboardIntro = 'Bun venit, ' . $coachName . '. Ai la indemana programul, jucatorii si competitiile.';
+    $dashboardIntro = 'Bun venit, ' . $coachName . '. Ai la îndemână programul, jucătorii și competițiile.';
 
     $dashboardCards = [
-        ['href' => 'activities.php', 'value' => $upcomingActivitiesCount, 'label' => 'Activitati viitoare'],
-        ['href' => 'members.php', 'value' => $assignedMembers, 'label' => 'Jucatori asociati'],
-        ['href' => 'competitions.php', 'value' => $stats['competitions'], 'label' => 'Competitii'],
-        ['href' => 'performance_history.php', 'value' => $stats['members'], 'label' => 'Istoric jucatori'],
+        ['href' => 'activities.php', 'value' => $upcomingActivitiesCount, 'label' => 'Activități viitoare'],
+        ['href' => 'members.php', 'value' => $assignedMembers, 'label' => 'Jucători asociați'],
+        ['href' => 'competitions.php', 'value' => $stats['competitions'], 'label' => 'Competiții'],
+        ['href' => 'performance_history.php', 'value' => $stats['members'], 'label' => 'Istoric jucători'],
     ];
 
     $quickActions = [
-        ['href' => 'activities.php', 'label' => 'Planifica activitate'],
-        ['href' => 'competitions.php', 'label' => 'Adauga punctaje'],
-        ['href' => 'members.php', 'label' => 'Vezi jucatori', 'secondary' => true],
-        ['href' => 'performance_history.php', 'label' => 'Verifica istoric', 'secondary' => true],
+        ['href' => 'activities.php', 'label' => 'Planifică activitate'],
+        ['href' => 'competitions.php', 'label' => 'Adaugă punctaje'],
+        ['href' => 'members.php', 'label' => 'Vezi jucători', 'secondary' => true],
+        ['href' => 'performance_history.php', 'label' => 'Verifică istoric', 'secondary' => true],
     ];
 
     $panels[] = [
@@ -97,7 +97,7 @@ if ($role === 'admin') {
                 'meta' => $activity['data'] . ' la ' . substr($activity['ora_start'], 0, 5) . ' - ' . $activity['sala'],
             ];
         }, $upcomingActivities),
-        'empty' => 'Nu exista activitati viitoare planificate.',
+        'empty' => 'Nu există activități viitoare planificate.',
     ];
 } else {
     $memberId = current_member_id();
@@ -146,27 +146,27 @@ if ($role === 'admin') {
 
     $memberName = $member['nume'] ?? 'Membru';
     $dashboardTitle = 'Panoul meu';
-    $dashboardIntro = 'Bun venit, ' . $memberName . '. Aici vezi rapid profilul, programul si rezultatele tale.';
+    $dashboardIntro = 'Bun venit, ' . $memberName . '. Aici vezi rapid profilul, programul și rezultatele tale.';
 
     $dashboardCards = [
         ['href' => 'members.php', 'value' => $member ? ucfirst($member['tip_membru']) : '-', 'label' => 'Profil'],
-        ['href' => 'performance_history.php', 'value' => $participationsCount, 'label' => 'Participari'],
+        ['href' => 'performance_history.php', 'value' => $participationsCount, 'label' => 'Participări'],
         ['href' => 'competitions.php', 'value' => $awardsCount, 'label' => 'Premii'],
-        ['href' => 'activities.php', 'value' => count($upcomingActivities), 'label' => 'Activitati apropiate'],
+        ['href' => 'activities.php', 'value' => count($upcomingActivities), 'label' => 'Activități apropiate'],
     ];
 
     $quickActions = [
         ['href' => 'members.php', 'label' => 'Vezi profilul'],
         ['href' => 'performance_history.php', 'label' => 'Istoricul meu'],
-        ['href' => 'activities.php', 'label' => 'Program activitati', 'secondary' => true],
-        ['href' => 'competitions.php', 'label' => 'Competitii', 'secondary' => true],
+        ['href' => 'activities.php', 'label' => 'Program activități', 'secondary' => true],
+        ['href' => 'competitions.php', 'label' => 'Competiții', 'secondary' => true],
     ];
 
     $panels[] = [
         'title' => 'Profil rapid',
         'items' => $member ? [
             ['title' => 'Nivel joc', 'meta' => $member['nivel_joc'] ?: '-'],
-            ['title' => 'Antrenor asociat', 'meta' => $member['nume_antrenor'] ?: 'Fara antrenor asociat'],
+            ['title' => 'Antrenor asociat', 'meta' => $member['nume_antrenor'] ?: 'Fără antrenor asociat'],
         ] : [],
         'empty' => 'Contul nu este legat de un membru existent.',
     ];
@@ -179,7 +179,7 @@ if ($role === 'admin') {
                 'meta' => $result['data'] . ' - ' . $result['locatie'] . ', punctaj ' . number_format((float)$result['punctaj_obtinut'], 2, '.', ''),
             ];
         }, $recentResults),
-        'empty' => 'Nu ai inca participari inregistrate.',
+        'empty' => 'Nu ai încă participări înregistrate.',
     ];
 
     $panels[] = [
@@ -190,7 +190,7 @@ if ($role === 'admin') {
                 'meta' => $activity['data'] . ' la ' . substr($activity['ora_start'], 0, 5) . ' - ' . $activity['sala'],
             ];
         }, $upcomingActivities),
-        'empty' => 'Nu exista activitati viitoare planificate.',
+        'empty' => 'Nu există activități viitoare planificate.',
     ];
 }
 
@@ -216,7 +216,7 @@ require 'includes/header.php';
 
 <section class="content-grid">
     <div class="panel">
-        <h3>Competitii astazi</h3>
+        <h3>Competiții astăzi</h3>
         <?php if ($todayCompetitions): ?>
             <ul class="clean-list">
                 <?php foreach ($todayCompetitions as $competition): ?>
@@ -227,12 +227,12 @@ require 'includes/header.php';
                 <?php endforeach; ?>
             </ul>
         <?php else: ?>
-            <p class="empty-state">Nu exista competitii programate pentru astazi.</p>
+            <p class="empty-state">Nu există competiții programate pentru astăzi.</p>
         <?php endif; ?>
     </div>
 
     <div class="panel">
-        <h3>Actiuni utile</h3>
+        <h3>Acțiuni utile</h3>
         <div class="action-list">
             <?php foreach ($quickActions as $action): ?>
                 <a class="button<?= !empty($action['secondary']) ? ' secondary' : '' ?>" href="<?= e($action['href']) ?>">
@@ -241,7 +241,7 @@ require 'includes/header.php';
             <?php endforeach; ?>
         </div>
         <?php if (is_admin()): ?>
-            <p class="form-note">Total deconturi inregistrate: <strong><?= e(format_money($stats['expenses'])) ?> lei</strong></p>
+            <p class="form-note">Total deconturi înregistrate: <strong><?= e(format_money($stats['expenses'])) ?> lei</strong></p>
         <?php endif; ?>
     </div>
 

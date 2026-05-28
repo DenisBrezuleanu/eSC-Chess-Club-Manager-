@@ -21,8 +21,8 @@ if (!empty($_SERVER['HTTP_HOST'])) {
         }
         ?>
         <div class="toast" role="status" aria-live="polite">
-            <strong>Competitie astazi</strong>
-            <span><?= e($pluginCompetitionNames ? implode(', ', $pluginCompetitionNames) : 'Verifica programul competitiilor.') ?></span>
+            <strong>Competiție astăzi</strong>
+            <span><?= e($pluginCompetitionNames ? implode(', ', $pluginCompetitionNames) : 'Verifică programul competițiilor.') ?></span>
         </div>
         <?php
     }

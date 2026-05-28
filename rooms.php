@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if (!$canManageRooms) {
-        $message = 'Nu ai permisiunea necesara pentru a modifica salile.';
+        $message = 'Nu ai permisiunea necesară pentru a modifica sălile.';
         $messageType = 'alert-error';
     } else {
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM rooms WHERE id = ?");
 
         if ($stmt->execute([$id])) {
-            $message = 'Sala a fost stearsa.';
+            $message = 'Sala a fost ștearsă.';
             $messageType = 'alert-success';
         }
     }
@@ -34,11 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id > 0) {
             $stmt = $pdo->prepare("UPDATE rooms SET nume = ?, capacitate = ?, dotari = ? WHERE id = ?");
             $stmt->execute([$nume, $capacitate, $dotari, $id]);
-            $message = 'Sala a fost modificata.';
+            $message = 'Sala a fost modificată.';
         } else {
             $stmt = $pdo->prepare("INSERT INTO rooms (nume, capacitate, dotari) VALUES (?, ?, ?)");
             $stmt->execute([$nume, $capacitate, $dotari]);
-            $message = 'Sala a fost adaugata.';
+            $message = 'Sala a fost adăugată.';
         }
 
         $messageType = 'alert-success';
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return 'imported';
         });
 
-        $message = csv_import_summary('sali', $result);
+        $message = csv_import_summary('săli', $result);
         $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
     }
@@ -84,19 +84,19 @@ if (isset($_GET['edit'])) {
     $editRoom = $stmt->fetch();
 }
 
-$pageTitle = 'eSC - Gestiune sali';
+$pageTitle = 'eSC - Gestiune săli';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Gestiunea salilor</h2>
-    <p>Administreaza salile si dotarile folosite pentru activitati.</p>
+    <h2>Gestiunea sălilor</h2>
+    <p>Administrează sălile și dotările folosite pentru activități.</p>
 </section>
 
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
 <?php if (!$canManageRooms): ?>
-    <div class="alert-success"><?= e(role_read_only_notice('sali')) ?></div>
+    <div class="alert-success"><?= e(role_read_only_notice('săli')) ?></div>
 <?php endif; ?>
 
 <?php if ($canManageRooms): ?>
@@ -106,10 +106,10 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?= e($editRoom['id'] ?? '') ?>">
 
-        <h3><?= $editRoom ? 'Editeaza sala' : 'Adauga sala' ?></h3>
+        <h3><?= $editRoom ? 'Editează sală' : 'Adaugă sală' ?></h3>
 
         <div class="form-field">
-            <label for="room-nume">Nume sala</label>
+            <label for="room-nume">Nume sală</label>
             <input type="text" id="room-nume" name="nume" value="<?= e($editRoom['nume'] ?? '') ?>" required>
         </div>
 
@@ -119,13 +119,13 @@ require 'includes/header.php';
         </div>
 
         <div class="form-field">
-            <label for="room-dotari">Dotari</label>
+            <label for="room-dotari">Dotări</label>
             <textarea id="room-dotari" name="dotari" rows="4" required><?= e($editRoom['dotari'] ?? '') ?></textarea>
         </div>
 
-        <button type="submit"><?= $editRoom ? 'Modifica' : 'Adauga' ?> sala</button>
+        <button type="submit"><?= $editRoom ? 'Modifică' : 'Adaugă' ?> sală</button>
         <?php if ($editRoom): ?>
-            <a class="button secondary" href="rooms.php">Anuleaza editarea</a>
+            <a class="button secondary" href="rooms.php">Anulează editarea</a>
         <?php endif; ?>
     </form>
 
@@ -133,21 +133,21 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="import_csv">
 
-        <h3>Import sali CSV</h3>
+        <h3>Import săli CSV</h3>
         <p class="form-note">Format: id, nume, capacitate, dotari</p>
 
         <div class="form-field">
-            <label for="rooms-csv-file">Fisier CSV</label>
+            <label for="rooms-csv-file">Fișier CSV</label>
             <input type="file" id="rooms-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa CSV</button>
+        <button type="submit">Importă CSV</button>
     </form>
 </section>
 <?php endif; ?>
 
 <section class="panel">
-    <h3>Lista salilor</h3>
+    <h3>Lista sălilor</h3>
     <div class="table-responsive">
         <table>
             <thead>
@@ -155,8 +155,8 @@ require 'includes/header.php';
                     <th>ID</th>
                     <th>Nume</th>
                     <th>Capacitate</th>
-                    <th>Dotari</th>
-                    <th>Actiuni</th>
+                    <th>Dotări</th>
+                    <th>Acțiuni</th>
                 </tr>
             </thead>
             <tbody>
@@ -169,12 +169,12 @@ require 'includes/header.php';
                         <td>
                             <?php if ($canManageRooms): ?>
                                 <div class="action-list">
-                                    <a class="button compact secondary" href="rooms.php?edit=<?= e($room['id']) ?>">Modifica</a>
+                                    <a class="button compact secondary" href="rooms.php?edit=<?= e($room['id']) ?>">Modifică</a>
                                     <form action="rooms.php" method="POST" class="inline-form">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= e($room['id']) ?>">
-                                        <button type="submit" class="compact danger">Sterge</button>
+                                        <button type="submit" class="compact danger">Șterge</button>
                                     </form>
                                 </div>
                             <?php else: ?>
@@ -185,7 +185,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$rooms): ?>
                     <tr>
-                        <td colspan="5" class="centered">Nu exista sali inregistrate.</td>
+                        <td colspan="5" class="centered">Nu există săli înregistrate.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

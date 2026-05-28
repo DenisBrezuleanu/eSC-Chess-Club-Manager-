@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if (!$canManageCoaches) {
-        $message = 'Nu ai permisiunea necesara pentru a modifica antrenorii.';
+        $message = 'Nu ai permisiunea necesară pentru a modifica antrenorii.';
         $messageType = 'alert-error';
     } else {
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM coaches WHERE id = ?");
 
         if ($stmt->execute([$id])) {
-            $message = 'Antrenorul a fost sters.';
+            $message = 'Antrenorul a fost șters.';
             $messageType = 'alert-success';
         }
     }
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?)
             ");
             $stmt->execute([$nume, $specializare, $disponibilitate, $rol, $grupa]);
-            $message = 'Antrenorul a fost adaugat.';
+            $message = 'Antrenorul a fost adăugat.';
         }
 
         $messageType = 'alert-success';
@@ -102,8 +102,8 @@ $pageTitle = 'eSC - Gestiune antrenori';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Gestiunea antrenorilor si colaboratorilor</h2>
-    <p>Adauga, modifica si urmareste rolurile antrenorilor din club.</p>
+    <h2>Gestiunea antrenorilor și colaboratorilor</h2>
+    <p>Adaugă, modifică și urmărește rolurile antrenorilor din club.</p>
 </section>
 
 <?php if ($message): ?>
@@ -120,7 +120,7 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?= e($editCoach['id'] ?? '') ?>">
 
-        <h3><?= $editCoach ? 'Editeaza antrenor' : 'Adauga antrenor' ?></h3>
+        <h3><?= $editCoach ? 'Editează antrenor' : 'Adaugă antrenor' ?></h3>
 
         <div class="form-field">
             <label for="coach-nume">Nume</label>
@@ -143,13 +143,13 @@ require 'includes/header.php';
         </div>
 
         <div class="form-field">
-            <label for="coach-grupa">Grupa asignata</label>
+            <label for="coach-grupa">Grupă asignată</label>
             <input type="text" id="coach-grupa" name="grupa_asignata" value="<?= e($editCoach['grupa_asignata'] ?? '') ?>" required>
         </div>
 
-        <button type="submit"><?= $editCoach ? 'Modifica' : 'Adauga' ?> antrenor</button>
+        <button type="submit"><?= $editCoach ? 'Modifică' : 'Adaugă' ?> antrenor</button>
         <?php if ($editCoach): ?>
-            <a class="button secondary" href="coaches.php">Anuleaza editarea</a>
+            <a class="button secondary" href="coaches.php">Anulează editarea</a>
         <?php endif; ?>
     </form>
 
@@ -161,11 +161,11 @@ require 'includes/header.php';
         <p class="form-note">Format: id, nume, specializare, disponibilitate, rol, grupa_asignata</p>
 
         <div class="form-field">
-            <label for="coaches-csv-file">Fisier CSV</label>
+            <label for="coaches-csv-file">Fișier CSV</label>
             <input type="file" id="coaches-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa CSV</button>
+        <button type="submit">Importă CSV</button>
     </form>
 </section>
 <?php endif; ?>
@@ -181,8 +181,8 @@ require 'includes/header.php';
                     <th>Specializare</th>
                     <th>Disponibilitate</th>
                     <th>Rol</th>
-                    <th>Grupa asignata</th>
-                    <th>Actiuni</th>
+                    <th>Grupă asignată</th>
+                    <th>Acțiuni</th>
                 </tr>
             </thead>
             <tbody>
@@ -197,12 +197,12 @@ require 'includes/header.php';
                         <td>
                             <?php if ($canManageCoaches): ?>
                                 <div class="action-list">
-                                    <a class="button compact secondary" href="coaches.php?edit=<?= e($coach['id']) ?>">Modifica</a>
+                                    <a class="button compact secondary" href="coaches.php?edit=<?= e($coach['id']) ?>">Modifică</a>
                                     <form action="coaches.php" method="POST" class="inline-form">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= e($coach['id']) ?>">
-                                        <button type="submit" class="compact danger">Sterge</button>
+                                        <button type="submit" class="compact danger">Șterge</button>
                                     </form>
                                 </div>
                             <?php else: ?>
@@ -213,7 +213,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$coaches): ?>
                     <tr>
-                        <td colspan="7" class="centered">Nu exista antrenori inregistrati.</td>
+                        <td colspan="7" class="centered">Nu există antrenori înregistrați.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

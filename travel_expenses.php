@@ -3,7 +3,7 @@ require_once 'includes/auth_check.php';
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 
-role_guard(is_admin(), 'Doar administratorul poate accesa deconturile si rapoartele financiare.');
+role_guard(is_admin(), 'Doar administratorul poate accesa deconturile și rapoartele financiare.');
 
 $message = '';
 $messageType = '';
@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM travel_expenses WHERE id = ?");
 
         if ($stmt->execute([$id])) {
-            $message = 'Decontul a fost sters.';
+            $message = 'Decontul a fost șters.';
             $messageType = 'alert-success';
         }
     }
@@ -38,14 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 WHERE id = ?
             ");
             $stmt->execute([$destination, $date, $purpose, $transport, $accommodation, $meals, $total, $id]);
-            $message = 'Decontul a fost modificat. Totalul a fost recalculat in PHP.';
+            $message = 'Decontul a fost modificat. Totalul a fost recalculat în PHP.';
         } else {
             $stmt = $pdo->prepare("
                 INSERT INTO travel_expenses (destinatie, data, scop, cost_transport, cost_cazare, cost_masa, total)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([$destination, $date, $purpose, $transport, $accommodation, $meals, $total]);
-            $message = 'Decontul a fost adaugat. Totalul a fost calculat in PHP.';
+            $message = 'Decontul a fost adăugat. Totalul a fost calculat în PHP.';
         }
 
         $messageType = 'alert-success';
@@ -103,12 +103,12 @@ if (isset($_GET['edit'])) {
     $editExpense = $stmt->fetch();
 }
 
-$pageTitle = 'eSC - Deconturi deplasari';
+$pageTitle = 'eSC - Deconturi deplasări';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Gestiunea financiara pentru deplasari</h2>
-    <p>Totalul nu este introdus manual: PHP il calculeaza dupa submit.</p>
+    <h2>Gestiunea financiară pentru deplasări</h2>
+    <p>Totalul nu este introdus manual: PHP îl calculează după submit.</p>
 </section>
 
 <?php if ($message): ?>
@@ -121,10 +121,10 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?= e($editExpense['id'] ?? '') ?>">
 
-        <h3><?= $editExpense ? 'Editeaza decont' : 'Adauga decont' ?></h3>
+        <h3><?= $editExpense ? 'Editează decont' : 'Adaugă decont' ?></h3>
 
         <div class="form-field">
-            <label for="expense-destinatie">Destinatie</label>
+            <label for="expense-destinatie">Destinație</label>
             <input type="text" id="expense-destinatie" name="destinatie" value="<?= e($editExpense['destinatie'] ?? '') ?>" required>
         </div>
 
@@ -148,7 +148,7 @@ require 'includes/header.php';
                 <input type="number" id="expense-cazare" name="cost_cazare" min="0" step="0.01" value="<?= e($editExpense['cost_cazare'] ?? '0.00') ?>" required>
             </div>
             <div class="form-field">
-                <label for="expense-masa">Cost masa</label>
+                <label for="expense-masa">Cost masă</label>
                 <input type="number" id="expense-masa" name="cost_masa" min="0" step="0.01" value="<?= e($editExpense['cost_masa'] ?? '0.00') ?>" required>
             </div>
         </div>
@@ -157,9 +157,9 @@ require 'includes/header.php';
             <p class="form-note">Total curent: <?= e(format_money($editExpense['total'])) ?> lei</p>
         <?php endif; ?>
 
-        <button type="submit"><?= $editExpense ? 'Modifica' : 'Adauga' ?> decont</button>
+        <button type="submit"><?= $editExpense ? 'Modifică' : 'Adaugă' ?> decont</button>
         <?php if ($editExpense): ?>
-            <a class="button secondary" href="travel_expenses.php">Anuleaza editarea</a>
+            <a class="button secondary" href="travel_expenses.php">Anulează editarea</a>
         <?php endif; ?>
     </form>
 
@@ -171,11 +171,11 @@ require 'includes/header.php';
         <p class="form-note">Format: id, destinatie, data, scop, cost_transport, cost_cazare, cost_masa, total</p>
 
         <div class="form-field">
-            <label for="expenses-csv-file">Fisier CSV</label>
+            <label for="expenses-csv-file">Fișier CSV</label>
             <input type="file" id="expenses-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa CSV</button>
+        <button type="submit">Importă CSV</button>
     </form>
 </section>
 
@@ -193,14 +193,14 @@ require 'includes/header.php';
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Destinatie</th>
+                    <th>Destinație</th>
                     <th>Data</th>
                     <th>Scop</th>
                     <th>Transport</th>
                     <th>Cazare</th>
-                    <th>Masa</th>
+                    <th>Masă</th>
                     <th>Total</th>
-                    <th>Actiuni</th>
+                    <th>Acțiuni</th>
                 </tr>
             </thead>
             <tbody>
@@ -216,14 +216,14 @@ require 'includes/header.php';
                         <td><strong><?= e(format_money($expense['total'])) ?></strong></td>
                         <td>
                             <div class="action-list">
-                                <a class="button compact secondary" href="travel_expenses.php?edit=<?= e($expense['id']) ?>">Modifica</a>
+                                <a class="button compact secondary" href="travel_expenses.php?edit=<?= e($expense['id']) ?>">Modifică</a>
                                 <a class="button compact secondary" href="travel_report.php?id=<?= e($expense['id']) ?>">Raport</a>
                                 <a class="button compact secondary" href="export_decont.php?id=<?= e($expense['id']) ?>">CSV</a>
                                 <form action="travel_expenses.php" method="POST" class="inline-form">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= e($expense['id']) ?>">
-                                    <button type="submit" class="compact danger">Sterge</button>
+                                    <button type="submit" class="compact danger">Șterge</button>
                                 </form>
                             </div>
                         </td>
@@ -231,7 +231,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$expenses): ?>
                     <tr>
-                        <td colspan="9" class="centered">Nu exista deconturi inregistrate.</td>
+                        <td colspan="9" class="centered">Nu există deconturi înregistrate.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

@@ -20,19 +20,19 @@ if ($competitionId > 0) {
 
 $leaderboard = $competitionId > 0 ? get_competition_leaderboard($pdo, $competitionId) : [];
 
-$pageTitle = 'eSC - Clasament competitie';
+$pageTitle = 'eSC - Clasament competiție';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Clasament competitie</h2>
-    <p>HTML-ul clasamentului este generat de PHP dupa ordonarea punctajelor in SQL.</p>
+    <h2>Clasament competiție</h2>
+    <p>HTML-ul clasamentului este generat de PHP după ordonarea punctajelor în SQL.</p>
 </section>
 
 <form action="leaderboard.php" method="GET" class="form-card compact-form">
     <div class="form-field">
         <label for="leaderboard-competition">Competitie</label>
         <select id="leaderboard-competition" name="competition_id" required>
-            <option value="">Alege competitia</option>
+            <option value="">Alege competiția</option>
             <?php foreach ($competitions as $competition): ?>
                 <option value="<?= e($competition['id']) ?>"<?= selected_attr($competitionId, $competition['id']) ?>>
                     <?= e($competition['nume']) ?> - <?= e($competition['data']) ?>
@@ -40,11 +40,11 @@ require 'includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
-    <button type="submit">Afiseaza clasament</button>
+    <button type="submit">Afișează clasament</button>
 </form>
 
 <section class="panel">
-    <h3><?= $selectedCompetition ? e($selectedCompetition['nume']) : 'Nicio competitie selectata' ?></h3>
+    <h3><?= $selectedCompetition ? e($selectedCompetition['nume']) : 'Nicio competiție selectată' ?></h3>
     <?= render_leaderboard_html($leaderboard) ?>
 </section>
 <?php require 'includes/footer.php'; ?>

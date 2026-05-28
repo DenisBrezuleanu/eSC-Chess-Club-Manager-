@@ -21,7 +21,7 @@ header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 
 $output = fopen('php://output', 'w');
-fputcsv($output, ['ID', 'Destinatie', 'Data', 'Scop', 'Cost transport', 'Cost cazare', 'Cost masa', 'Total']);
+fputcsv($output, ['ID', 'Destinație', 'Data', 'Scop', 'Cost transport', 'Cost cazare', 'Cost masă', 'Total']);
 
 foreach ($expenses as $expense) {
     fputcsv($output, [

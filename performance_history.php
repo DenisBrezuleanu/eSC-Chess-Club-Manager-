@@ -36,12 +36,12 @@ if ($memberId > 0) {
     $history = $stmt->fetchAll();
 }
 
-$pageTitle = is_member() ? 'eSC - Istoricul meu' : 'eSC - Istoric performante';
+$pageTitle = is_member() ? 'eSC - Istoricul meu' : 'eSC - Istoric performanțe';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2><?= is_member() ? 'Istoricul meu de performante' : 'Istoric performante' ?></h2>
-    <p>Timeline-ul este construit dintr-un JOIN SQL intre membri, participari si competitii.</p>
+    <h2><?= is_member() ? 'Istoricul meu de performanțe' : 'Istoric performanțe' ?></h2>
+    <p>Timeline-ul este construit dintr-un JOIN SQL între membri, participări și competiții.</p>
 </section>
 
 <?php if (!is_member()): ?>
@@ -57,17 +57,17 @@ require 'includes/header.php';
             <?php endforeach; ?>
         </select>
     </div>
-    <button type="submit">Afiseaza istoric</button>
+    <button type="submit">Afișează istoric</button>
 </form>
 <?php else: ?>
-    <div class="alert-success"><?= e(role_read_only_notice('istoricul tau competitional')) ?></div>
+    <div class="alert-success"><?= e(role_read_only_notice('istoricul tău competițional')) ?></div>
 <?php endif; ?>
 
 <section class="panel">
     <h3><?= $selectedMember ? e($selectedMember['nume']) : 'Niciun membru selectat' ?></h3>
 
     <?php if ($history): ?>
-        <div class="timeline" role="list" aria-label="Timeline performante">
+        <div class="timeline" role="list" aria-label="Timeline performanțe">
             <?php foreach ($history as $item): ?>
                 <div class="timeline-item" role="listitem">
                     <div class="timeline-content">
@@ -83,7 +83,7 @@ require 'includes/header.php';
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <p class="empty-state">Nu exista participari in competitii pentru acest membru.</p>
+        <p class="empty-state">Nu există participări în competiții pentru acest membru.</p>
     <?php endif; ?>
 </section>
 <?php require 'includes/footer.php'; ?>

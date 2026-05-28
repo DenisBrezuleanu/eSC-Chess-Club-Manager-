@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if (!$canManageActivitySchedule) {
-        $message = 'Nu ai permisiunea necesara pentru a modifica activitatile.';
+        $message = 'Nu ai permisiunea necesară pentru a modifica activitățile.';
         $messageType = 'alert-error';
     } else {
 
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM activities WHERE id = ?");
 
         if ($stmt->execute([$id])) {
-            $message = 'Activitatea a fost stearsa.';
+            $message = 'Activitatea a fost ștearsă.';
             $messageType = 'alert-success';
         }
     }
@@ -60,10 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $end = trim($_POST['ora_end'] ?? '');
 
         if ($end <= $start) {
-            $message = 'Eroare: ora de sfarsit trebuie sa fie dupa ora de inceput.';
+            $message = 'Eroare: ora de sfârșit trebuie să fie după ora de început.';
             $messageType = 'alert-error';
         } elseif (has_activity_conflict($pdo, $roomId, $date, $start, $end, $id)) {
-            $message = 'Eroare: exista deja o activitate in aceasta sala in intervalul ales.';
+            $message = 'Eroare: există deja o activitate în această sală în intervalul ales.';
             $messageType = 'alert-error';
         } else {
             if ($id > 0) {
@@ -73,14 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE id = ?
                 ");
                 $stmt->execute([$roomId, $activityName, $date, $start, $end, $id]);
-                $message = 'Activitatea a fost modificata.';
+                $message = 'Activitatea a fost modificată.';
             } else {
                 $stmt = $pdo->prepare("
                     INSERT INTO activities (id_sala, nume_activitate, data, ora_start, ora_end)
                     VALUES (?, ?, ?, ?, ?)
                 ");
                 $stmt->execute([$roomId, $activityName, $date, $start, $end]);
-                $message = 'Activitatea a fost planificata.';
+                $message = 'Activitatea a fost planificată.';
             }
 
             $messageType = 'alert-success';
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return 'imported';
         });
 
-        $message = csv_import_summary('activitati', $result);
+        $message = csv_import_summary('activități', $result);
         $messageType = $result['error'] ? 'alert-error' : 'alert-success';
     }
     }
@@ -150,19 +150,19 @@ if (isset($_GET['edit'])) {
     $editActivity = $stmt->fetch();
 }
 
-$pageTitle = 'eSC - Planificare activitati';
+$pageTitle = 'eSC - Planificare activități';
 require 'includes/header.php';
 ?>
 <section class="page-title">
-    <h2>Planificarea antrenamentelor si activitatilor</h2>
-    <p>Programeaza activitati pe sali si evita suprapunerile de interval.</p>
+    <h2>Planificarea antrenamentelor și activităților</h2>
+    <p>Programează activități pe săli și evită suprapunerile de interval.</p>
 </section>
 
 <?php if ($message): ?>
     <div class="<?= e($messageType) ?>"><?= e($message) ?></div>
 <?php endif; ?>
 <?php if (!$canManageActivitySchedule): ?>
-    <div class="alert-success"><?= e(role_read_only_notice('programul activitatilor')) ?></div>
+    <div class="alert-success"><?= e(role_read_only_notice('programul activităților')) ?></div>
 <?php endif; ?>
 
 <?php if ($canManageActivitySchedule): ?>
@@ -172,12 +172,12 @@ require 'includes/header.php';
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?= e($editActivity['id'] ?? '') ?>">
 
-        <h3><?= $editActivity ? 'Editeaza activitate' : 'Programeaza activitate' ?></h3>
+        <h3><?= $editActivity ? 'Editează activitate' : 'Programează activitate' ?></h3>
 
         <div class="form-field">
-            <label for="activity-room">Sala</label>
+            <label for="activity-room">Sală</label>
             <select id="activity-room" name="id_sala" required>
-                <option value="">Alege o sala</option>
+                <option value="">Alege o sală</option>
                 <?php foreach ($rooms as $room): ?>
                     <option value="<?= e($room['id']) ?>"<?= selected_attr($editActivity['id_sala'] ?? '', $room['id']) ?>>
                         <?= e($room['nume']) ?> (capacitate: <?= e($room['capacitate']) ?>)
@@ -202,14 +202,14 @@ require 'includes/header.php';
                 <input type="time" id="activity-start" name="ora_start" value="<?= e($editActivity['ora_start'] ?? '') ?>" required>
             </div>
             <div class="form-field">
-                <label for="activity-end">Ora sfarsit</label>
+                <label for="activity-end">Ora sfârșit</label>
                 <input type="time" id="activity-end" name="ora_end" value="<?= e($editActivity['ora_end'] ?? '') ?>" required>
             </div>
         </div>
 
-        <button type="submit"><?= $editActivity ? 'Modifica' : 'Programeaza' ?> activitatea</button>
+        <button type="submit"><?= $editActivity ? 'Modifică' : 'Programează' ?> activitatea</button>
         <?php if ($editActivity): ?>
-            <a class="button secondary" href="activities.php">Anuleaza editarea</a>
+            <a class="button secondary" href="activities.php">Anulează editarea</a>
         <?php endif; ?>
     </form>
 
@@ -217,21 +217,21 @@ require 'includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="import_csv">
 
-        <h3>Import activitati CSV</h3>
+        <h3>Import activități CSV</h3>
         <p class="form-note">Format: id, id_sala, nume_activitate, data, ora_start, ora_end</p>
 
         <div class="form-field">
-            <label for="activities-csv-file">Fisier CSV</label>
+            <label for="activities-csv-file">Fișier CSV</label>
             <input type="file" id="activities-csv-file" name="csv_file" accept=".csv" required>
         </div>
 
-        <button type="submit">Importa CSV</button>
+        <button type="submit">Importă CSV</button>
     </form>
 </section>
 <?php endif; ?>
 
 <section class="panel">
-    <h3>Calendar programari</h3>
+    <h3>Calendar programări</h3>
     <div class="table-responsive">
         <table>
             <thead>
@@ -239,8 +239,8 @@ require 'includes/header.php';
                     <th>Data</th>
                     <th>Interval orar</th>
                     <th>Activitate</th>
-                    <th>Sala</th>
-                    <th>Actiuni</th>
+                    <th>Sală</th>
+                    <th>Acțiuni</th>
                 </tr>
             </thead>
             <tbody>
@@ -253,12 +253,12 @@ require 'includes/header.php';
                         <td>
                             <?php if ($canManageActivitySchedule): ?>
                                 <div class="action-list">
-                                    <a class="button compact secondary" href="activities.php?edit=<?= e($activity['id']) ?>">Modifica</a>
+                                    <a class="button compact secondary" href="activities.php?edit=<?= e($activity['id']) ?>">Modifică</a>
                                     <form action="activities.php" method="POST" class="inline-form">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= e($activity['id']) ?>">
-                                        <button type="submit" class="compact danger">Sterge</button>
+                                        <button type="submit" class="compact danger">Șterge</button>
                                     </form>
                                 </div>
                             <?php else: ?>
@@ -269,7 +269,7 @@ require 'includes/header.php';
                 <?php endforeach; ?>
                 <?php if (!$activities): ?>
                     <tr>
-                        <td colspan="5" class="centered">Nicio activitate planificata momentan.</td>
+                        <td colspan="5" class="centered">Nicio activitate planificată momentan.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
