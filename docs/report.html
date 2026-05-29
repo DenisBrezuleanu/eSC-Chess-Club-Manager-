@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>eSC Chess Club Manager - Raport Arhitectural & Documentație</title>
+    <style>
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #fafafa;
+        }
+        article {
+            background: #fff;
+            padding: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3, h4 { color: #111; }
+        h1 { border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { margin-top: 2.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        section { margin-bottom: 2rem; }
+        ul, ol { padding-left: 1.5rem; }
+        code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #d63384; }
+        pre code { display: block; padding: 1rem; overflow-x: auto; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.75rem; border: 1px solid #ddd; text-align: left; }
+        th { background: #f8f9fa; }
+        .author-info { margin: 2rem 0; font-style: italic; color: #555; }
+    </style>
+</head>
+<body>
+    <article>
+        <header>
+            <h1>eSC - Chess Club Manager</h1>
+            <div class="author-info">
+                <p>Documentație tehnică și raport arhitectural</p>
+                <p>Proiect PHP Monolitic (Fără JavaScript) - eSC</p>
+            </div>
+        </header>
+
+        <section id="introduction">
+            <h2>1. Introducere (Introduction)</h2>
+            <p><strong>eSC - Chess Club Manager</strong> este un sistem web dedicat administrării unui club de șah. Construit cu o arhitectură strict bazată pe PHP (fără utilizarea JavaScript pe partea de client), oferind suport complet pentru gestiunea membrilor, organizarea competițiilor, evidența antrenorilor, a sălilor de joc și chiar un modul integrat de rapoarte și deconturi financiare.</p>
+        </section>
+
+        <section id="purpose">
+            <h2>2. Scop și Funcționalitate (System Purpose and Functionality)</h2>
+            <p>Sistemul facilitează digitalizarea unui club sportiv de șah. Interfețele și drepturile de acces diferă bazat pe tipul de utilizator:</p>
+            <ul>
+                <li><strong>Admin:</strong> Drepturi absolute. Poate crea membri, gestiona antrenori, administra competiții, verifica deconturi (<i>Travel Expenses</i>) și face importuri/exporturi agregate.</li>
+                <li><strong>Antrenor (Coach):</strong> Are acces la proprii jucători, poate vedea și seta programele în săli și urmărește evoluția competițională a grupului său.</li>
+                <li><strong>Membru (Member):</strong> Vizualizează propriul profil, activitățile clubului și scorurile/leaderboard-ul public.</li>
+            </ul>
+        </section>
+
+        <section id="implemented-features">
+            <h2>3. Funcționalități Implementate (Implemented Features)</h2>
+            <p>Platforma dispune de următoarele module cheie:</p>
+            <ul>
+                <li><strong>Sistem Gestiune (CRUD):</strong> Interfețe dedicate pentru manipularea entităților principale (<code>members.php</code>, <code>coaches.php</code>, <code>rooms.php</code>, <code>activities.php</code>, <code>competitions.php</code>). Include prevenție CSRF și input validation server-side.</li>
+                <li><strong>Sistemul Financiar (Rapoarte Deplasări):</strong> Prin <code>travel_expenses.php</code> și <code>travel_report.php</code> se permit înregistrarea costurilor (transport, cazare, masă) și calculul totalului pentru deplasările la competiții.</li>
+                <li><strong>Import / Export Date:</strong> Aplicația permite popularea bazei de date masiv via fișiere CSV (inclus în <code>functions.php</code>) și export avansat către XML (<code>export_data_xml.php</code>) și JSON (<code>export_data_json.php</code>) prin intermediul claselor native PHP (precum <i>DOMDocument</i>).</li>
+                <li><strong>Microservicii și Notificări:</strong> Un endpoint dedicat <code>api/stats.php</code> furnizează statistici. Acest API este consumat de PHP pe post de client HTTP la randarea paginii prin <code>plugin_notificari.php</code>, generând automat un Toast de informare direct de pe server.</li>
+                <li><strong>Istoric și Leaderboards:</strong> <code>performance_history.php</code> coroborează prezențele membrilor și generează un istoric clar pentru antrenori și jucători.</li>
+            </ul>
+        </section>
+
+        <section id="architecture">
+            <h2>4. Arhitectura și Baza de Date (Architecture & Data Schema)</h2>
+            <p>Aplicația urmează o arhitectură Software <strong>Monolitică Client-Server</strong> centrată pe execuție procesuală PHP.</p>
+            <h3>Sistemul Bazei de Date (MySQL via PDO)</h3>
+            <p>Managerul automatizat din <code>schema.php</code> garantează coerența bazei de date (MySQL). Tabelele interconectate prin Chei Străine (<i>Foreign Keys</i>) cu reguli de tip CASCADE sau SET NULL garantează integritatea referențială.</p>
+            <ul>
+                <li><code>users</code> - credentials asociate cu un id_membru / id_antrenor</li>
+                <li><code>members</code> - entitățile cu nivel_joc și legătură către antrenor</li>
+                <li><code>competition_participants</code> - tabelă pivot între competiții și membri</li>
+                <li><code>travel_expenses</code> - raportări de costuri deplasări</li>
+            </ul>
+        </section>
+
+        <section id="ui-interaction">
+            <h2>5. Interfață și Responsivitate (UI and Interaction)</h2>
+            <p>Interfața respectă constrângerile unei aplicații non-JavaScript. Responsivitatea (adaptarea la ecrane de telefon) pe navigare se face prin intermediul schemei <strong>"CSS Checkbox Hack"</strong> integrată în <code>includes/header.php</code>. </p>
+            <p>HTML-ul este curat, utilizând atribute ARIA, cu elemente semantice specifice (<code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>) asigurând o accesibilitate peste medie (a11y).</p>
+        </section>
+
+        <section id="glossary">
+            <h2>6. Glosar (Glossary)</h2>
+            <ul>
+                <li><strong>PDO:</strong> PHP Data Objects - interfață sigură de comunicare cu SQL pentru evitarea injecțiilor de date.</li>
+                <li><strong>CSRF Token:</strong> Cheie criptografică temporală ce asigură că o cerere POST originează legitim din formularul oficial al paginii.</li>
+                <li><strong>CSS Checkbox Hack:</strong> Tehnică ce profită de pseudo-clasa <code>:checked</code> în CSS pentru a manevra vizibilitatea unui meniu drop-down, excluzând necesitatea codului JS.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

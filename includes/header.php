@@ -67,6 +67,7 @@ $navItems = $navItemsByRole[current_user_role()] ?? $navItemsByRole['member'];
                 <?= e($item['label']) ?>
             </a>
         <?php endforeach; ?>
+        <a href="docs/report.html" target="_blank">Documentație</a>
         <a href="logout.php">Ieșire<?= isset($_SESSION['username']) ? ' (' . e($_SESSION['username']) . ' - ' . current_user_role_label() . ')' : '' ?></a>
     </nav>
 

@@ -12,8 +12,8 @@ try {
         $user,
         $pass,
         [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, //interog sql
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, ///cerem date 
         ]
     );
 
